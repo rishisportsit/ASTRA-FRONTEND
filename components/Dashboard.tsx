@@ -30,39 +30,34 @@ export default function Dashboard({ onLock }: DashboardProps) {
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto h-screen block">
-        <header className="absolute top-0 left-0 right-0 z-50 pt-8 pb-6 px-4 md:px-8 flex justify-between items-center bg-gradient-to-b from-black/40 to-transparent backdrop-blur-md border-b border-white/5">
-          <div className="flex items-center gap-4">
-            {/* <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1> */}
-            {/* Color Picker Trigger */}
+        <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 p-2 pl-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl">
+          {/* Color Picker */}
+          <div className="relative group z-50">
+            <button
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center ${showColorPicker ? "bg-white/20 border-white/20 text-white" : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10"}`}
+            >
+              <Palette size={14} />
+            </button>
 
-            <div className="relative group z-50">
-              <button
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                className={`p-2 rounded-full backdrop-blur-md border transition-all flex items-center justify-center ${showColorPicker ? "bg-white/20 border-white/20 text-white" : "bg-white/10 border-white/5 text-white/70 hover:bg-white/20"}`}
-              >
-                <Palette size={16} />
-              </button>
-
-              <AnimatePresence>
-                {showColorPicker && (
-                  <div className="absolute top-0 left-0">
-                    <GradientPicker
-                      initialBackground={background}
-                      onChange={setBackground}
-                      onClose={() => setShowColorPicker(false)}
-                    />
-                  </div>
-                )}
-              </AnimatePresence>
-
-              <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-black/80 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Change Theme
-              </span>
-            </div>
+            <AnimatePresence>
+              {showColorPicker && (
+                <div className="absolute top-12 left-0">
+                  <GradientPicker
+                    initialBackground={background}
+                    onChange={setBackground}
+                    onClose={() => setShowColorPicker(false)}
+                  />
+                </div>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* Separator */}
+          <div className="h-4 w-[1px] bg-white/10" />
+
           {/* Tab Bar - Desktop */}
-          <div className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/5 backdrop-blur-md border border-white/10">
+          <div className="hidden md:flex items-center gap-1">
             {tabsConfig.map((tab) => {
               const isActive = activeTabId === tab.id;
               const Icon = tab.icon;
@@ -70,23 +65,27 @@ export default function Dashboard({ onLock }: DashboardProps) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTabId(tab.id)}
-                  className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${isActive ? "bg-white/10 text-white shadow-sm" : "text-white/60 hover:text-white"}`}
+                  className={`relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300 flex items-center gap-2 ${isActive ? "bg-white/15 text-white shadow-sm ring-1 ring-white/5" : "text-white/50 hover:text-white hover:bg-white/5"}`}
                 >
-                  <Icon size={16} />
+                  <Icon size={14} />
                   {tab.label}
                 </button>
               );
             })}
           </div>
 
+          {/* Separator */}
+          <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+
+          {/* Lock Button */}
           <button
             onClick={onLock}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/5 hover:bg-white/20 transition-colors group"
+            className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/10 flex items-center justify-center transition-colors group"
             title="Lock Screen"
           >
             <Lock
-              size={18}
-              className="text-white/80 group-hover:text-white transition-colors"
+              size={14}
+              className="group-hover:text-red-300 transition-colors"
             />
           </button>
         </header>

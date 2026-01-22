@@ -1,102 +1,238 @@
-import React, { useState } from "react";
-import { Plus, GripVertical, CheckCircle2, ChevronRight, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, GripVertical, CheckCircle2, ChevronRight, X, Layout, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    createBoard,
+    subscribeToBoards,
+    addTask as firebaseAddTask,
+    moveTask as firebaseMoveTask,
+    deleteTask as firebaseDeleteTask,
+    subscribeToTasks,
+    Board,
+    Task,
+    ColumnType
+} from "@/utils/kanban-service";
 
-type ColumnType = "Dock" | "In Progress" | "Finished" | "Parked";
 const COLUMNS: ColumnType[] = ["Dock", "In Progress", "Finished", "Parked"];
 
-interface Task {
-    id: string;
-    content: string;
-    column: ColumnType;
-    createdAt: number;
-}
-
 export const TasksView = () => {
-    const [boardName, setBoardName] = useState("");
-    const [isBoardCreated, setIsBoardCreated] = useState(false);
+    const [boards, setBoards] = useState<Board[]>([]);
+    const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Board Creation State
+    const [newBoardName, setNewBoardName] = useState("");
+    const [isCreatingBoard, setIsCreatingBoard] = useState(false);
+
+    // Task Creation State
     const [activeTaskContent, setActiveTaskContent] = useState("");
     const [isAddingTask, setIsAddingTask] = useState<ColumnType | null>(null);
 
-    const handleCreateBoard = () => {
-        if (boardName.trim()) {
-            setIsBoardCreated(true);
+    // Fetch Boards on Mount
+    useEffect(() => {
+        setIsLoading(true);
+        const unsubscribe = subscribeToBoards(
+            (fetchedBoards) => {
+                setBoards(fetchedBoards);
+                setIsLoading(false);
+                setError(null);
+                // Auto-select first board if none selected & boards exist
+                if (!selectedBoardId && fetchedBoards.length > 0) {
+                    // setSelectedBoardId(fetchedBoards[0].id);
+                }
+            },
+            (err) => {
+                console.error("Failed to load boards:", err);
+                setError("Unable to load boards. Please check your connection or configuration.");
+                setIsLoading(false);
+            }
+        );
+        return () => unsubscribe();
+    }, [selectedBoardId]);
+
+    // Subscribe to Tasks when Board Selected
+    useEffect(() => {
+        if (selectedBoardId) {
+            const unsubscribe = subscribeToTasks(
+                selectedBoardId,
+                (fetchedTasks) => {
+                    setTasks(fetchedTasks);
+                },
+                (err) => {
+                    console.error("Failed to load tasks:", err);
+                    // Don't blow up the whole UI, just maybe show a toast or local error? 
+                    // reusing global error for simplicity for now, but usually task error shouldn't clear board list
+                    // Let's Keep board selected but show alert.
+                    // setError("Failed to sync tasks."); 
+                }
+            );
+            return () => unsubscribe();
+        } else {
+            setTasks([]);
+        }
+    }, [selectedBoardId]);
+
+    const handleCreateBoard = async () => {
+        if (newBoardName.trim()) {
+            try {
+                setError(null);
+                const boardId = await createBoard(newBoardName.trim());
+                setSelectedBoardId(boardId);
+                setNewBoardName("");
+                setIsCreatingBoard(false);
+            } catch (error) {
+                console.error("Failed to create board", error);
+                setError("Failed to create board. Please try again.");
+            }
         }
     };
 
-    const handleAddTask = (column: ColumnType) => {
-        if (activeTaskContent.trim()) {
-            const newTask: Task = {
-                id: Math.random().toString(36).substr(2, 9),
-                content: activeTaskContent,
-                column,
-                createdAt: Date.now()
-            };
-            setTasks([...tasks, newTask]);
+    const handleAddTask = async (column: ColumnType) => {
+        if (activeTaskContent.trim() && selectedBoardId) {
+            await firebaseAddTask(selectedBoardId, activeTaskContent.trim(), column);
             setActiveTaskContent("");
+            setIsAddingTask(null);
         }
-        setIsAddingTask(null);
     };
 
-    // Simple move function for demonstration (Drag and Drop is complex to implement robustly in one shot without dnd-kit or react-beautiful-dnd, but we can do a simple click-to-move for reliability first, or simple drag)
-    // Let's implement a simple "Move to next" or click based move for MVP stability, 
-    // OR use Framer Motion reorder if they are in same list. Since they are different lists, 
-    // fully robust DnD requires more state. Let's provide "Move" actions in the card for now to hit the "4 columns" requirement reliably.
-
-    const moveTask = (taskId: string, targetColumn: ColumnType) => {
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, column: targetColumn } : t));
+    const moveTask = async (taskId: string, targetColumn: ColumnType) => {
+        if (selectedBoardId) {
+            await firebaseMoveTask(selectedBoardId, taskId, targetColumn);
+        }
     };
 
-    const deleteTask = (taskId: string) => {
-        setTasks(tasks.filter(t => t.id !== taskId));
+    const deleteTask = async (taskId: string) => {
+        if (selectedBoardId) {
+            await firebaseDeleteTask(selectedBoardId, taskId);
+        }
     };
 
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-full text-white/50">Loading boards...</div>;
+    }
 
-    if (!isBoardCreated) {
+    // If no board selected, show list of boards or create new
+    if (!selectedBoardId) {
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] space-y-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-md p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center"
-                >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-500 to-blue-500 mx-auto mb-6 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <CheckCircle2 size={32} className="text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Create New Board</h2>
-                    <p className="text-white/50 mb-8 text-sm">Given your workflow a name to get started.</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 w-full max-w-2xl mx-auto p-4">
 
-                    <div className="relative mb-6">
-                        <input
-                            type="text"
-                            value={boardName}
-                            onChange={(e) => setBoardName(e.target.value)}
-                            placeholder="e.g. Project Phoenix"
-                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center"
-                            onKeyDown={(e) => e.key === 'Enter' && handleCreateBoard()}
-                        />
-                    </div>
+                {/* Global Error Alert */}
+                <AnimatePresence>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 flex items-center gap-3 backdrop-blur-md"
+                        >
+                            <AlertCircle size={20} />
+                            <span className="text-sm font-medium">{error}</span>
+                            <button onClick={() => setError(null)} className="ml-auto hover:text-white"><X size={16} /></button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                    <button
-                        onClick={handleCreateBoard}
-                        disabled={!boardName.trim()}
-                        className="w-full py-3 rounded-xl bg-white text-black font-semibold hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                {!isCreatingBoard ? (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="w-full space-y-6"
                     >
-                        Create Board
-                    </button>
-                </motion.div>
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-bold text-white">Your Boards</h2>
+                            <button
+                                onClick={() => setIsCreatingBoard(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-xl font-semibold hover:bg-white/90 transition-colors"
+                            >
+                                <Plus size={16} /> New Board
+                            </button>
+                        </div>
+
+                        {boards.length === 0 ? (
+                            <div className="text-center py-12 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-md">
+                                <Layout size={48} className="text-white/20 mx-auto mb-4" />
+                                <p className="text-white/50">
+                                    {error ? "Could not verify existing boards." : "No boards yet."} <br /> Create one to get started.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {boards.map(board => (
+                                    <button
+                                        key={board.id}
+                                        onClick={() => setSelectedBoardId(board.id)}
+                                        className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left group"
+                                    >
+                                        <h3 className="font-semibold text-lg text-white mb-1 group-hover:text-blue-300 transition-colors">{board.name}</h3>
+                                        <p className="text-xs text-white/40">
+                                            Created {board.createdAt?.toDate ? board.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full max-w-md p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center"
+                    >
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-500 to-blue-500 mx-auto mb-6 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                            <Plus size={32} className="text-white" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Create New Board</h2>
+                        <div className="relative mb-6">
+                            <input
+                                type="text"
+                                value={newBoardName}
+                                onChange={(e) => setNewBoardName(e.target.value)}
+                                placeholder="e.g. Q1 Roadmap"
+                                autoFocus
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center"
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateBoard()}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsCreatingBoard(false)}
+                                className="flex-1 py-3 rounded-xl bg-white/5 text-white/70 font-semibold hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateBoard}
+                                disabled={!newBoardName.trim()}
+                                className="flex-1 py-3 rounded-xl bg-white text-black font-semibold hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
             </div>
         );
     }
 
+    const activeBoard = boards.find(b => b.id === selectedBoardId);
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-6 px-1">
-                <div>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">{boardName}</h2>
-                    <p className="text-white/40 text-xs mt-1">Kanban Board</p>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setSelectedBoardId(null)}
+                        className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                    >
+                        <Layout size={18} />
+                    </button>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">{activeBoard?.name || "Loading..."}</h2>
+                        <p className="text-white/40 text-xs mt-1">Kanban Board</p>
+                    </div>
                 </div>
+
                 <div className="flex -space-x-2">
                     {[1, 2, 3].map(i => (
                         <div key={i} className="w-8 h-8 rounded-full bg-white/10 border border-black backdrop-blur-md flex items-center justify-center text-[10px] text-white/70">
@@ -117,8 +253,8 @@ export const TasksView = () => {
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
                                 <h3 className="font-semibold text-white/90 text-sm flex items-center gap-2">
                                     <span className={`w-2 h-2 rounded-full ${column === 'Dock' ? 'bg-blue-400' :
-                                        column === 'In Progress' ? 'bg-yellow-400' :
-                                            column === 'Finished' ? 'bg-green-400' : 'bg-gray-400'
+                                            column === 'In Progress' ? 'bg-yellow-400' :
+                                                column === 'Finished' ? 'bg-green-400' : 'bg-gray-400'
                                         }`} />
                                     {column}
                                 </h3>
@@ -142,7 +278,8 @@ export const TasksView = () => {
                                             <p className="text-sm text-white/80 mb-2">{task.content}</p>
                                             <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
                                                 <span className="text-[10px] text-white/30">
-                                                    {new Date(task.createdAt).toLocaleDateString()}
+                                                    {/* Handle timestamp safely - it might be null initially or different type */}
+                                                    {task.createdAt?.toDate ? task.createdAt.toDate().toLocaleDateString() : 'Just now'}
                                                 </span>
 
                                                 {/* Simple Move Actions */}

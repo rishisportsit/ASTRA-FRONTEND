@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@heroui/react": "^2.8.7",
+    "@tiptap/react": "^3.16.0",
+    "@tiptap/starter-kit": "^3.16.0",
     "firebase": "^12.8.0",
     "framer-motion": "^12.29.0",
     "lucide-react": "^0.562.0",

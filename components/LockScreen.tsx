@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, Delete } from "lucide-react";
 
 interface LockScreenProps {
   isLocked: boolean;
@@ -15,7 +15,7 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
 
   useEffect(() => {
     if (pin.length === 4) {
-      const correctPin = process.env.NEXT_PUBLIC_LOCK_PASSWORD ;
+      const correctPin = process.env.NEXT_PUBLIC_LOCK_PASSWORD;
       if (pin === correctPin) {
         onUnlock();
         setPin("");
@@ -45,81 +45,76 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
       {isLocked && (
         <motion.div
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          animate={{ opacity: 1, backdropFilter: "blur(8px)", y: 0 }}
-          exit={{ opacity: 0, backdropFilter: "blur(0px)", y: "-100%" }} // Slide up completely
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-white bg-black/30"
+          animate={{ opacity: 1, backdropFilter: "blur(12px)", y: 0 }}
+          exit={{ opacity: 0, backdropFilter: "blur(0px)", y: "-100%" }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center text-white bg-black/40"
         >
-          <div className="flex flex-col items-center gap-12">
+          {/* Subtle Noise Texture for premium feel */}
+          <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none" />
+
+          <div className="flex flex-col items-center gap-10 relative z-10">
             <motion.div
               animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
               className="flex flex-col items-center gap-6"
             >
-              <h1 className="text-3xl font-bold tracking-tight text-white mb-2 drop-shadow-lg">
-                Welcome to Astra
+              <h1 className="text-4xl font-light tracking-tight text-white mb-2 drop-shadow-2xl font-mono">
+                ASTRA
               </h1>
-              <div className="flex items-center gap-2 bg-black/40 px-6 py-2 rounded-full backdrop-blur-3xl border border-white/5 shadow-2xl">
-                <Lock size={16} className="text-white" />
-                <span className="text-xs font-medium tracking-wide">
-                  Astra is Locked
+              <div className="flex items-center gap-2 bg-white/10 px-5 py-1.5 rounded-full backdrop-blur-3xl border border-white/10 shadow-lg">
+                <Lock size={14} className="text-white/70" />
+                <span className="text-[10px] font-medium tracking-widest uppercase text-white/70">
+                  System Locked
                 </span>
               </div>
             </motion.div>
 
             {/* Pins dots */}
-            <div className="flex gap-6 mb-2">
+            <div className="flex gap-4 mb-4">
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className={`w-3.5 h-3.5 rounded-full border-2 border-white transition-all duration-200 ${pin.length > i ? "bg-white" : "bg-transparent"
+                  className={`w-4 h-4 rounded-full border border-white/30 transition-all duration-300 ${pin.length > i
+                      ? "bg-white border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] scale-110"
+                      : "bg-transparent scale-100"
                     }`}
                 />
               ))}
             </div>
 
             {/* Keypad */}
-            <div className="grid grid-cols-3 gap-6 max-w-xs">
+            <div className="grid grid-cols-3 gap-x-8 gap-y-6 max-w-sm">
               {[
-                { num: "1", sub: "" },
-                { num: "2", sub: "ABC" },
-                { num: "3", sub: "DEF" },
-                { num: "4", sub: "GHI" },
-                { num: "5", sub: "JKL" },
-                { num: "6", sub: "MNO" },
-                { num: "7", sub: "PQRS" },
-                { num: "8", sub: "TUV" },
-                { num: "9", sub: "WXYZ" },
-              ].map(({ num, sub }) => (
+                { num: "1" }, { num: "2" }, { num: "3" },
+                { num: "4" }, { num: "5" }, { num: "6" },
+                { num: "7" }, { num: "8" }, { num: "9" },
+              ].map(({ num }) => (
                 <button
                   key={num}
                   onClick={() => handleNumClick(num)}
-                  className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-2xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/40"
+                  className="w-20 h-20 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 shadow-lg flex flex-col items-center justify-center transition-all duration-200 active:scale-95 active:bg-white/20 group"
                 >
-                  <span className="text-3xl font-bold leading-none">
+                  <span className="text-3xl font-light text-white/90 group-hover:text-white transition-colors">
                     {num}
                   </span>
-                  {sub && (
-                    <span className="text-[9px] font-bold tracking-widest leading-none mt-1 opacity-60">
-                      {sub}
-                    </span>
-                  )}
                 </button>
               ))}
-              <div className="flex items-center justify-center">
-                <button className="text-sm font-semibold text-white/80 hover:text-white transition-colors"></button>
-              </div>
+
+              <div /> {/* Empty slot */}
+
               <button
                 onClick={() => handleNumClick("0")}
-                className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-2xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/40"
+                className="w-20 h-20 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 shadow-lg flex flex-col items-center justify-center transition-all duration-200 active:scale-95 active:bg-white/20 group"
               >
-                <span className="text-3xl font-bold leading-none">0</span>
+                <span className="text-3xl font-light text-white/90 group-hover:text-white transition-colors">0</span>
               </button>
+
               <div className="flex items-center justify-center">
                 <button
                   onClick={handleBackspace}
-                  className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all hover:bg-white/5 active:scale-95"
                 >
-                  Cancel
+                  <Delete size={28} strokeWidth={1.5} />
                 </button>
               </div>
             </div>
