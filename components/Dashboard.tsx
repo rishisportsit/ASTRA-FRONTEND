@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { tabsConfig } from "../config/dashboard-tabs";
 import { Palette, Lock } from "lucide-react";
+import GradientPicker from "./GradientPicker";
 
 interface DashboardProps {
   onLock: () => void;
@@ -11,7 +12,8 @@ interface DashboardProps {
 
 export default function Dashboard({ onLock }: DashboardProps) {
   const [activeTabId, setActiveTabId] = useState(tabsConfig[0].id);
-  const [bgColor, setBgColor] = useState("#000000"); // Default black background
+  const [background, setBackground] = useState("#000000"); // Default black background
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const activeTab =
     tabsConfig.find((tab) => tab.id === activeTabId) || tabsConfig[0];
@@ -19,33 +21,40 @@ export default function Dashboard({ onLock }: DashboardProps) {
   return (
     <div className="min-h-screen text-white relative overflow-hidden font-sans">
       <div
-        className="fixed inset-0 z-0 transition-colors duration-500"
-        style={{ backgroundColor: bgColor }}
+        className="fixed inset-0 z-0 transition-[background] duration-500"
+        style={{ background: background }}
       >
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-600/30 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px]" />
         <div className="absolute top-[40%] left-[30%] w-[300px] h-[300px] bg-orange-600/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto h-screen flex flex-col px-4 md:px-8">
-        <header className="pt-8 pb-6 flex justify-between items-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto h-screen block">
+        <header className="absolute top-0 left-0 right-0 z-50 pt-8 pb-6 px-4 md:px-8 flex justify-between items-center bg-gradient-to-b from-black/40 to-transparent backdrop-blur-md border-b border-white/5">
           <div className="flex items-center gap-4">
             {/* <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1> */}
             {/* Color Picker Trigger */}
-            <div className="relative group">
-              <label
-                htmlFor="bg-picker"
-                className="cursor-pointer p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/5 transition-all flex items-center justify-center"
+
+            <div className="relative group z-50">
+              <button
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className={`p-2 rounded-full backdrop-blur-md border transition-all flex items-center justify-center ${showColorPicker ? "bg-white/20 border-white/20 text-white" : "bg-white/10 border-white/5 text-white/70 hover:bg-white/20"}`}
               >
-                <Palette size={16} className="text-white/70" />
-              </label>
-              <input
-                type="color"
-                id="bg-picker"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              />
+                <Palette size={16} />
+              </button>
+
+              <AnimatePresence>
+                {showColorPicker && (
+                  <div className="absolute top-0 left-0">
+                    <GradientPicker
+                      initialBackground={background}
+                      onChange={setBackground}
+                      onClose={() => setShowColorPicker(false)}
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
+
               <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-black/80 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 Change Theme
               </span>
@@ -82,8 +91,8 @@ export default function Dashboard({ onLock }: DashboardProps) {
           </button>
         </header>
 
-        <div className="md:hidden pb-6">
-          <div className="flex items-center justify-between bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-md">
+        <div className="md:hidden fixed top-24 left-4 right-4 z-40 pb-6 pointer-events-none">
+          <div className="flex items-center justify-between bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-md pointer-events-auto shadow-lg">
             {tabsConfig.map((tab) => {
               const isActive = activeTabId === tab.id;
               const Icon = tab.icon;
@@ -120,7 +129,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
         </div>
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto pb-6 no-scrollbar">
+        <main className="w-full h-full overflow-y-auto pt-32 pb-6 px-4 md:px-8 no-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab.id}

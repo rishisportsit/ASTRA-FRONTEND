@@ -44,10 +44,10 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
       {isLocked && (
         <motion.div
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          animate={{ opacity: 1, backdropFilter: "blur(20px)", y: 0 }}
+          animate={{ opacity: 1, backdropFilter: "blur(8px)", y: 0 }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)", y: "-100%" }} // Slide up completely
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-white bg-black/60"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-white bg-black/30"
         >
           <div className="flex flex-col items-center gap-12">
             <motion.div
@@ -67,9 +67,8 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className={`w-3.5 h-3.5 rounded-full border-2 border-white transition-all duration-200 ${
-                    pin.length > i ? "bg-white" : "bg-transparent"
-                  }`}
+                  className={`w-3.5 h-3.5 rounded-full border-2 border-white transition-all duration-200 ${pin.length > i ? "bg-white" : "bg-transparent"
+                    }`}
                 />
               ))}
             </div>
@@ -92,7 +91,7 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
                   onClick={() => handleNumClick(num)}
                   className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-2xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/40"
                 >
-                  <span className="text-3xl font-light leading-none">
+                  <span className="text-3xl font-bold leading-none">
                     {num}
                   </span>
                   {sub && (
@@ -109,7 +108,7 @@ export default function LockScreen({ isLocked, onUnlock }: LockScreenProps) {
                 onClick={() => handleNumClick("0")}
                 className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-2xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center transition-all active:scale-95 active:bg-white/40"
               >
-                <span className="text-3xl font-light leading-none">0</span>
+                <span className="text-3xl font-bold leading-none">0</span>
               </button>
               <div className="flex items-center justify-center">
                 <button
