@@ -1,9 +1,10 @@
 import { ForexView } from "@/components/views/Forex";
 import { OverviewView } from "@/components/views/Overview";
-import { LayoutDashboard, Globe, IndianRupee, Notebook, CheckSquare } from "lucide-react";
+import { LayoutDashboard, Globe, IndianRupee, Notebook, CheckSquare, MessageCircle } from "lucide-react";
 import { IndianView } from "../components/views/Indian";
 import { NotesView } from "@/components/views/NotesView";
 import { TasksView } from "@/components/views/TasksView";
+import { ChatView } from "@/components/views/ChatView";
 import React from "react";
 
 export interface TabConfig {
@@ -43,5 +44,11 @@ export const tabsConfig: TabConfig[] = [
     label: "Tasks",
     icon: CheckSquare,
     component: <TasksView />,
+  },
+  {
+    id: "chat",
+    label: "Chat",
+    icon: MessageCircle,
+    component: <ChatView />,
   },
 ];

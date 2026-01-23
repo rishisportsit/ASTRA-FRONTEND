@@ -8,7 +8,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Astra ",
+  title: "Astra-Hawk",
   description: "A minimal, customizable dashboard application ",
 };
 
