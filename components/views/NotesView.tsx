@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Clock } from "lucide-react";
+import { Plus, Clock, Share2 } from "lucide-react";
 import { NoteDialog, Note } from "../NoteDialog";
 import { AnimatePresence } from "framer-motion";
 
@@ -54,6 +54,13 @@ export const NotesView = () => {
         setIsDialogOpen(true);
     };
 
+    const handleShare = (e: React.MouseEvent, note: Note) => {
+        e.stopPropagation();
+        const url = `${window.location.origin}/notes/${note.id}`;
+        navigator.clipboard.writeText(url);
+        alert(`Link copied to clipboard: ${url}`);
+    };
+
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex items-center justify-between">
@@ -73,9 +80,17 @@ export const NotesView = () => {
                         onClick={() => handleOpenEdit(note)}
                         className="p-5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-all cursor-pointer group flex flex-col h-64 relative overflow-hidden"
                     >
-                        <h3 className="font-semibold text-lg text-white/90 mb-2 group-hover:text-blue-200 transition-colors line-clamp-1">
+                        <h3 className="font-semibold text-lg text-white/90 mb-2 group-hover:text-blue-200 transition-colors line-clamp-1 pr-8">
                             {note.title}
                         </h3>
+
+                        <button
+                            onClick={(e) => handleShare(e, note)}
+                            className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/20 text-white/40 hover:text-white transition-all z-10 opacity-0 group-hover:opacity-100"
+                            title="Share note"
+                        >
+                            <Share2 size={16} />
+                        </button>
 
                         <div
                             className="text-sm text-white/60 line-clamp-6 prose prose-invert prose-sm"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Share2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const NoteEditor = dynamic(() => import("./NoteEditor").then((mod) => mod.NoteEditor), {
@@ -50,6 +50,16 @@ export const NoteDialog = ({ isOpen, onClose, onSave, initialNote }: NoteDialogP
         }
     };
 
+    const handleShare = () => {
+        if (initialNote?.id) {
+            const url = `${window.location.origin}/notes/${initialNote.id}`;
+            navigator.clipboard.writeText(url);
+            alert(`Link copied to clipboard: ${url}`);
+        } else {
+            alert("Please save the note before sharing.");
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -81,6 +91,13 @@ export const NoteDialog = ({ isOpen, onClose, onSave, initialNote }: NoteDialogP
                         autoFocus
                     />
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleShare}
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                            title="Share note"
+                        >
+                            <Share2 size={20} />
+                        </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors"
