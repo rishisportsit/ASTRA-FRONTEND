@@ -1,4 +1,4 @@
-import { DataTable, Column } from "@/components/reusables/table";
+import { DataTable, Column } from "@/components/ui/data-table";
 import { Wallet, TrendingUp, Activity, ArrowUpRight } from "lucide-react";
 
 interface IndianStock {

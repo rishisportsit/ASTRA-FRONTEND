@@ -12,7 +12,7 @@ import {
     getDocs
 } from "firebase/firestore";
 
-export type ColumnType = "Dock" | "In Progress" | "Finished" | "Parked";
+export type ColumnType = "Backlog" | "To Do" | "In Progress" | "In Review" | "Testing" | "Done" | "Dock" | "Finished" | "Parked";
 
 export interface Task {
     id: string;
@@ -24,15 +24,16 @@ export interface Task {
 export interface Board {
     id: string;
     name: string;
+    columns?: ColumnType[];
     createdAt: any;
 }
 
-// --- BOARDS ---
 
-export const createBoard = async (name: string) => {
+export const createBoard = async (name: string, columns: ColumnType[] = ["Dock", "In Progress", "Finished", "Parked"]) => {
     try {
         const docRef = await addDoc(collection(db, "boards"), {
             name,
+            columns,
             createdAt: serverTimestamp(),
         });
         return docRef.id;
@@ -63,7 +64,6 @@ export const subscribeToBoards = (
     );
 }
 
-// --- TASKS ---
 
 export const subscribeToTasks = (
     boardId: string,
@@ -91,7 +91,7 @@ export const addTask = async (boardId: string, content: string, column: ColumnTy
     await addDoc(collection(db, `boards/${boardId}/tasks`), {
         content,
         column,
-        createdAt: serverTimestamp() // Use server timestamp (will need conversion on read if handling dates strictly)
+        createdAt: serverTimestamp() 
     });
 }
 
