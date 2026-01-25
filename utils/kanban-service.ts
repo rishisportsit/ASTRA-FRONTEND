@@ -9,7 +9,9 @@ import {
     query,
     orderBy,
     serverTimestamp,
-    where
+    where,
+    getDocs,
+    writeBatch
 } from "firebase/firestore";
 
 export type ColumnType = "Backlog" | "To Do" | "In Progress" | "In Review" | "Testing" | "Done" | "Dock" | "Finished" | "Parked";
@@ -166,4 +168,30 @@ export const moveTask = async (taskId: string, newColumn: ColumnType) => {
 
 export const deleteTask = async (taskId: string) => {
     await deleteDoc(doc(db, "astra-tasks", taskId));
+}
+
+export const deleteBoard = async (boardId: string) => {
+    try {
+        console.log("Starting deletion for board:", boardId);
+        // 1. Get all tasks for this board
+        const q = query(collection(db, "astra-tasks"), where("boardId", "==", boardId));
+        const snapshot = await getDocs(q);
+
+        // 2. Batch delete tasks
+        const batch = writeBatch(db);
+        snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        // 3. Delete the board itself
+        const boardRef = doc(db, "astra-boards", boardId);
+        batch.delete(boardRef);
+
+        // 4. Commit batch
+        await batch.commit();
+
+    } catch (e) {
+        console.error("Error deleting board:", e);
+        throw e;
+    }
 }

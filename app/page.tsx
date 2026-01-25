@@ -16,6 +16,13 @@ export default function Home() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
+
+    // Check persistence
+    const savedMode = localStorage.getItem("astra-active-mode");
+    if (savedMode === "true") {
+      setIsLocked(false);
+    }
+
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 

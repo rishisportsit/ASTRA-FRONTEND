@@ -47,6 +47,7 @@ import {
   updateTask as firebaseUpdateTask,
   moveTask as firebaseMoveTask,
   deleteTask as firebaseDeleteTask,
+  deleteBoard,
   subscribeToTasks,
   Board,
   Task,
@@ -255,6 +256,7 @@ export const TasksView = () => {
   const [newBoardName, setNewBoardName] = useState("");
   const [isCreatingBoard, setIsCreatingBoard] = useState(false);
   const [selectedColumns, setSelectedColumns] = useState<ColumnType[]>(DEFAULT_SELECTION);
+  const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
 
   const [activeTaskContent, setActiveTaskContent] = useState("");
   const [isAddingTask, setIsAddingTask] = useState<ColumnType | null>(null);
@@ -347,6 +349,20 @@ export const TasksView = () => {
       }
     }
   };
+
+  const handleDeleteBoard = async () => {
+    console.log("handleDeleteBoard called", boardToDelete);
+    if (boardToDelete) {
+      try {
+        console.log("Calling service deleteBoard with", boardToDelete.id);
+        await deleteBoard(boardToDelete.id);
+        setBoardToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete board", error);
+        setError("Failed to delete board. Please try again.");
+      }
+    }
+  }
 
   const toggleColumnSelection = (column: ColumnType) => {
     setSelectedColumns(prev =>
@@ -584,21 +600,32 @@ export const TasksView = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {boards.map((board) => (
-                  <button
-                    key={board.id}
-                    onClick={() => setSelectedBoardId(board.id)}
-                    className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left group"
-                  >
-                    <h3 className="font-semibold text-lg text-white mb-1 group-hover:text-blue-300 transition-colors">
-                      {board.name}
-                    </h3>
-                    <p className="text-xs text-white/40">
-                      Created{" "}
-                      {board.createdAt?.toDate
-                        ? board.createdAt.toDate().toLocaleDateString()
-                        : "Just now"}
-                    </p>
-                  </button>
+                  <div key={board.id} className="relative group">
+                    <button
+                      onClick={() => setSelectedBoardId(board.id)}
+                      className="w-full p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left"
+                    >
+                      <h3 className="font-semibold text-lg text-white mb-1 group-hover:text-blue-300 transition-colors">
+                        {board.name}
+                      </h3>
+                      <p className="text-xs text-white/40">
+                        Created{" "}
+                        {board.createdAt?.toDate
+                          ? board.createdAt.toDate().toLocaleDateString()
+                          : "Just now"}
+                      </p>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBoardToDelete(board);
+                      }}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-black/20 text-white/20 hover:text-red-400 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all z-10"
+                      title="Delete Board"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -676,7 +703,54 @@ export const TasksView = () => {
             </div>
           </motion.div>
         )}
-      </div>
+
+
+        {/* DELETE BOARD CONFIRMATION DIALOG */}
+        <AnimatePresence>
+          {boardToDelete && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setBoardToDelete(null)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-[#111] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden ring-1 ring-white/10"
+              >
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
+                  <AlertCircle size={24} className="text-red-500" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white text-center mb-2">Delete Board?</h3>
+                <p className="text-white/50 text-center text-sm mb-6">
+                  Are you sure you want to delete <span className="text-white font-medium">"{boardToDelete.name}"</span>?
+                  First we will delete all tasks in this board and then the board itself. <br />This action cannot be undone.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setBoardToDelete(null)}
+                    className="flex-1 py-2.5 rounded-xl bg-white/5 text-white/70 font-semibold hover:bg-white/10 transition-colors hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteBoard}
+                    className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div >
     );
   }
 
@@ -866,7 +940,7 @@ export const TasksView = () => {
             >
               <div className="p-6">
                 <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
-                    <AlertCircle className="text-red-500" size={24} />
+                  <AlertCircle className="text-red-500" size={24} />
                 </div>
                 <h3 className="text-lg font-semibold text-white text-center mb-2">Delete Task</h3>
                 <p className="text-white/50 text-center text-sm mb-6">

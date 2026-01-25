@@ -19,6 +19,16 @@ export default function Dashboard({ onLock }: DashboardProps) {
   const [isActiveMode, setIsActiveMode] = useState(false);
 
   useEffect(() => {
+    const saved = localStorage.getItem("astra-active-mode");
+    if (saved === "true") setIsActiveMode(true);
+  }, []);
+
+  const handleActiveModeChange = (checked: boolean) => {
+    setIsActiveMode(checked);
+    localStorage.setItem("astra-active-mode", String(checked));
+  };
+
+  useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (!isActiveMode && timeLeft > 0) {
@@ -71,7 +81,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
                 <input
                   type="checkbox"
                   checked={isActiveMode}
-                  onChange={(e) => setIsActiveMode(e.target.checked)}
+                  onChange={(e) => handleActiveModeChange(e.target.checked)}
                   className="peer sr-only"
                 />
                 <div className="w-4 h-4 rounded border border-white/30 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all" />
