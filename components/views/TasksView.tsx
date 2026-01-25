@@ -120,41 +120,18 @@ const SortableTaskItem = ({
       className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none flex flex-col justify-between ${isVerticalView ? 'p-3 flex-row items-center gap-4 mb-2' : 'p-3 mb-3 min-h-[100px]'
         }`}
     >
-      <div className={`flex flex-col gap-2 ${isVerticalView ? 'flex-1' : 'w-full'}`}>
-        {/* Header: Priority & Grip */}
-        <div className="flex justify-between items-center w-full">
-          {task.priority && (
-            <div className={`w-2 h-2 rounded-full ${priorityColors[task.priority] || "bg-gray-500"}`} title={`${task.priority} Priority`} />
-          )}
-          {!isVerticalView && (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
-              <GripVertical size={14} className="text-white/20" />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <p className={`text-white/90 break-all leading-snug ${isVerticalView ? 'text-sm font-medium mb-0' : 'text-sm mb-1'}`}>
+      <div className={`flex justify-between items-start gap-2 ${isVerticalView ? 'flex-1 items-center' : ''}`}>
+        <p className={`text-white/80 break-all ${isVerticalView ? 'text-sm font-medium mb-0' : 'text-sm mb-2'}`}>
           {task.content}
         </p>
-
-        {/* Deadline & Meta */}
-        <div className="flex items-center gap-3 text-[10px] text-white/40 mt-1">
-          {task.deadline && (
-            <div className="flex items-center gap-1 text-white/60 bg-white/5 px-1.5 py-0.5 rounded">
-              <Calendar size={10} />
-              <span>
-                {task.deadline.toDate
-                  ? task.deadline.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                  : new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-              </span>
-            </div>
-          )}
-          {/* Estimated Time or Time Spent could go here too if desired */}
-        </div>
+        {!isVerticalView && (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical size={14} className="text-white/20" />
+          </div>
+        )}
       </div>
 
-      <div className={`flex items-center justify-between ${isVerticalView ? 'gap-2 border-t-0 pt-0' : 'mt-2 pt-2 border-t border-white/5 w-full'}`}>
+      <div className={`flex items-center justify-between ${isVerticalView ? 'gap-4 border-t-0 pt-0' : 'mt-2 pt-2 border-t border-white/5'}`}>
         <span className="text-[10px] text-white/30 whitespace-nowrap">
           {task.createdAt?.toDate
             ? task.createdAt.toDate().toLocaleDateString()
@@ -261,6 +238,11 @@ export const TasksView = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; taskId: string | null }>({
+    isOpen: false,
+    taskId: null
+  });
 
   // Layout preference (could be saved to local storage)
   const [isVerticalView, setIsVerticalView] = useState(false);
@@ -410,17 +392,25 @@ export const TasksView = () => {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    await firebaseDeleteTask(taskId);
+  const handleUpdateTask = async (taskId: string | undefined, updates: Partial<Task>) => {
+    if (taskId) {
+      await firebaseUpdateTask(taskId, updates);
+    }
     setEditingTask(null);
   };
 
-  const handleCompleteTask = async (task: Task) => {
-    // Find "Done" or "Finished" column
-    const doneCol = boardColumns.includes("Done") ? "Done" : (boardColumns.includes("Finished") ? "Finished" : null);
-    if (doneCol) {
-      await firebaseMoveTask(task.id, doneCol);
+  const handleDeleteTask = (taskId: string) => {
+    setDeleteConfirmation({ isOpen: true, taskId });
+  };
+
+  const confirmDeleteTask = async () => {
+    if (deleteConfirmation.taskId) {
+      await firebaseDeleteTask(deleteConfirmation.taskId);
+      if (editingTask?.id === deleteConfirmation.taskId) {
+        setEditingTask(null);
+      }
     }
+    setDeleteConfirmation({ isOpen: false, taskId: null });
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -855,6 +845,43 @@ export const TasksView = () => {
         onDelete={handleDeleteTask}
         initialTask={editingTask}
       />
+
+      <AnimatePresence>
+        {deleteConfirmation.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#1C1C1E] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-xl"
+            >
+              <div className="p-6">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
+                    <AlertCircle className="text-red-500" size={24} />
+                </div>
+                <h3 className="text-lg font-semibold text-white text-center mb-2">Delete Task</h3>
+                <p className="text-white/50 text-center text-sm mb-6">
+                  Are you sure you want to delete this task? This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirmation({ isOpen: false, taskId: null })}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteTask}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div >
   );
 };

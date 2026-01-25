@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Plus, Clock, Share2, Trash2, Loader2, Eye, Maximize2 } from "lucide-react";
+import { Plus, Clock, Share2, Trash2, Loader2, Eye, Maximize2, AlertCircle } from "lucide-react";
 import { NoteDialog, Note as DialogNote } from "../NoteDialog";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNotes } from "../../hooks/useNotes";
 import { Note } from "../../services/notesService";
 
@@ -15,6 +15,10 @@ export const NotesView = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<DialogNote | null>(null);
     const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; noteId: string | null }>({
+        isOpen: false,
+        noteId: null
+    });
 
     const handleCreateUpdateNote = async (noteData: Partial<DialogNote>) => {
         if (noteData.id) {
@@ -53,11 +57,16 @@ export const NotesView = () => {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
+    const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm("Are you sure you want to delete this note?")) {
-            await deleteNote(id);
+        setDeleteConfirmation({ isOpen: true, noteId: id });
+    };
+
+    const confirmDeleteNote = async () => {
+        if (deleteConfirmation.noteId) {
+            await deleteNote(deleteConfirmation.noteId);
         }
+        setDeleteConfirmation({ isOpen: false, noteId: null });
     };
 
     const handleShare = (e: React.MouseEvent, note: Note) => {
@@ -158,6 +167,43 @@ export const NotesView = () => {
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {deleteConfirmation.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[#1C1C1E] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-xl"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
+                                    <AlertCircle className="text-red-500" size={24} />
+                                </div>
+                                <h3 className="text-lg font-semibold text-white text-center mb-2">Delete Note</h3>
+                                <p className="text-white/50 text-center text-sm mb-6">
+                                    Are you sure you want to delete <span className="text-white font-medium">"{notes.find(n => n.id === deleteConfirmation.noteId)?.title}"</span>? This action cannot be undone.
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setDeleteConfirmation({ isOpen: false, noteId: null })}
+                                        className="flex-1 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteNote}
+                                        className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <AnimatePresence>
                 {isDialogOpen && (

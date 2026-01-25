@@ -66,7 +66,7 @@ export default function GradientPicker({
       initial={{ opacity: 0, scale: 0.9, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
-      className="absolute top-16 left-0 z-50 w-80 p-4 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/10 shadow-2xl ring-1 ring-white/5"
+      className="z-50 w-80 p-4 rounded-3xl bg-[#1C1C1E] border border-white/10 shadow-2xl ring-1 ring-white/5"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-white font-medium text-sm flex items-center gap-2">
