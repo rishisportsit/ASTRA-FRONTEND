@@ -23,6 +23,8 @@ export interface Task {
     description?: string;
     priority?: Priority;
     deadline?: any;
+    estimatedTime?: number; // in hours or minutes, let's say string for flexibility or number for calculation? Plan said number.
+    timeSpent?: number;
     column: ColumnType;
     createdAt: any;
 }
@@ -77,10 +79,10 @@ export const subscribeToTasks = (
     onError?: (error: any) => void
 ) => {
     // Query 'astra-tasks' collection where 'boardId' matches the current board
+    // Note: Removed orderBy("createdAt") to avoid needing a composite index for now. Sorting client-side.
     const q = query(
         collection(db, "astra-tasks"),
-        where("boardId", "==", boardId),
-        orderBy("createdAt", "desc")
+        where("boardId", "==", boardId)
     );
 
     return onSnapshot(
@@ -90,6 +92,14 @@ export const subscribeToTasks = (
                 id: doc.id,
                 ...doc.data()
             } as Task));
+
+            // Sort client-side
+            tasks.sort((a, b) => {
+                const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tB - tA; // Descending
+            });
+
             callback(tasks);
         },
         (error) => {
@@ -109,6 +119,33 @@ export const addTask = async (boardId: string, content: string, column: ColumnTy
     });
 }
 
+// Helper to remove undefined keys
+const cleanData = (data: any) => {
+    const clean: any = {};
+    Object.keys(data).forEach(key => {
+        if (data[key] !== undefined) {
+            clean[key] = data[key];
+        }
+    });
+    return clean;
+}
+
+export const createTask = async (boardId: string, taskData: Partial<Task>, column: ColumnType) => {
+    // Clean up undefined values from taskData if necessary, but Firestore handles them or we can just pass.
+    // Ensure critical fields
+    await addDoc(collection(db, "astra-tasks"), {
+        boardId,
+        content: taskData.content,
+        description: taskData.description || "",
+        priority: taskData.priority || "Medium",
+        deadline: taskData.deadline ?? null,
+        estimatedTime: taskData.estimatedTime ?? null,
+        timeSpent: taskData.timeSpent ?? 0,
+        column,
+        createdAt: serverTimestamp()
+    });
+}
+
 export const updateTask = async (taskId: string, updates: Partial<Task>) => {
     const taskRef = doc(db, "astra-tasks", taskId);
     // Remove id/boardId/createdAt from updates if present to avoid overwriting immutables if passed carelessly, 
@@ -116,7 +153,8 @@ export const updateTask = async (taskId: string, updates: Partial<Task>) => {
     // if we control the input.
     // Actually, we should probably exclude id from the payload.
     const { id, ...data } = updates as any;
-    await updateDoc(taskRef, data);
+    const sanitizedData = cleanData(data);
+    await updateDoc(taskRef, sanitizedData);
 }
 
 export const moveTask = async (taskId: string, newColumn: ColumnType) => {

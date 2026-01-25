@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, Calendar, Flag, AlignLeft, Trash2, Clock } from "lucide-react";
+import { X, Calendar, Flag, AlignLeft, Trash2, Clock, Timer } from "lucide-react";
 import { Task, Priority } from "../utils/kanban-service";
 
 interface TaskDialogProps {
@@ -16,6 +16,8 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<Priority>("Medium");
     const [deadline, setDeadline] = useState("");
+    const [estimatedTime, setEstimatedTime] = useState("");
+    const [timeSpent, setTimeSpent] = useState("");
 
     useEffect(() => {
         if (isOpen) {
@@ -23,8 +25,9 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                 setContent(initialTask.content);
                 setDescription(initialTask.description || "");
                 setPriority(initialTask.priority || "Medium");
-                // Format date for input if exists
-                // Assuming deadline is a Firestore timestamp or null
+                setEstimatedTime(initialTask.estimatedTime?.toString() || "");
+                setTimeSpent(initialTask.timeSpent?.toString() || "");
+
                 if (initialTask.deadline) {
                     // Check if it's a Firestore timestamp (has toDate) or string/date
                     const d = initialTask.deadline.toDate ? initialTask.deadline.toDate() : new Date(initialTask.deadline);
@@ -35,11 +38,13 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                     setDeadline("");
                 }
             } else {
-                // Create Mode (not used yet given current flow, but good to have)
+                // Create Mode - Reset
                 setContent("");
                 setDescription("");
                 setPriority("Medium");
                 setDeadline("");
+                setEstimatedTime("");
+                setTimeSpent("");
             }
         }
     }, [isOpen, initialTask]);
@@ -50,7 +55,9 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                 content,
                 description,
                 priority,
-                deadline: deadline ? new Date(deadline) : null
+                deadline: deadline ? new Date(deadline) : null,
+                estimatedTime: estimatedTime ? parseFloat(estimatedTime) : undefined,
+                timeSpent: timeSpent ? parseFloat(timeSpent) : undefined
             };
             onSave(initialTask?.id, updates);
             onClose();
@@ -89,9 +96,14 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
                     <div className="flex items-center gap-2 text-white/50 text-sm font-medium uppercase tracking-wider">
-                        <span className={`w-2 h-2 rounded-full ${priority === 'High' ? 'bg-red-400' : priority === 'Medium' ? 'bg-yellow-400' : 'bg-blue-400'
-                            }`} />
-                        {priority} Priority
+                        {initialTask ? (
+                            <>
+                                <span className={`w-2 h-2 rounded-full ${priority === 'High' ? 'bg-red-400' : priority === 'Medium' ? 'bg-yellow-400' : 'bg-blue-400'}`} />
+                                {priority} Priority
+                            </>
+                        ) : (
+                            <>Wait to create...</>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         {initialTask && onDelete && (
@@ -112,7 +124,7 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                     </div>
                 </div>
 
-                <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
+                <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar">
                     {/* Title Input */}
                     <div className="space-y-2">
                         <input
@@ -120,43 +132,83 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                             onChange={(e) => setContent(e.target.value)}
                             className="w-full bg-transparent text-2xl font-bold text-white placeholder:text-white/20 focus:outline-none"
                             placeholder="Task Title"
+                            autoFocus
                         />
                     </div>
 
                     {/* Properties Grid */}
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Priority */}
-                        <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
-                                <Flag size={12} /> Priority
-                            </label>
-                            <div className="flex gap-2">
-                                {(['Low', 'Medium', 'High'] as Priority[]).map(p => (
-                                    <button
-                                        key={p}
-                                        onClick={() => setPriority(p)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${priority === p
+                    <div className="grid grid-cols-2 gap-6">
+                        {/* Left Column */}
+                        <div className="space-y-4">
+                            {/* Priority */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                                    <Flag size={12} /> Priority
+                                </label>
+                                <div className="flex gap-2">
+                                    {(['Low', 'Medium', 'High'] as Priority[]).map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setPriority(p)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${priority === p
                                                 ? "bg-white/10 border-white/20 text-white"
                                                 : "bg-transparent border-transparent text-white/30 hover:bg-white/5"
-                                            }`}
-                                    >
-                                        {p}
-                                    </button>
-                                ))}
+                                                }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Deadline */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                                    <Calendar size={12} /> Deadline
+                                </label>
+                                <input
+                                    type="date"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                    className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm text-white/80 focus:outline-none focus:border-white/20 w-full"
+                                />
                             </div>
                         </div>
 
-                        {/* Deadline */}
-                        <div className="space-y-2">
+                        {/* Right Column - Time Logging */}
+                        <div className="space-y-4">
                             <label className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
-                                <Calendar size={12} /> Deadline
+                                <Clock size={12} /> Time Tracking (Hrs)
                             </label>
-                            <input
-                                type="date"
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                                className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm text-white/80 focus:outline-none focus:border-white/20 w-full"
-                            />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-white/30 uppercase">Estimated</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={estimatedTime}
+                                            onChange={(e) => setEstimatedTime(e.target.value)}
+                                            placeholder="0"
+                                            className="w-full bg-white/5 border border-white/5 rounded-lg pl-3 pr-2 py-1.5 text-sm text-white/80 focus:outline-none focus:border-white/20"
+                                        />
+                                        <Timer size={14} className="absolute right-2 top-2 text-white/20" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-white/30 uppercase">Spent</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={timeSpent}
+                                            onChange={(e) => setTimeSpent(e.target.value)}
+                                            placeholder="0"
+                                            className="w-full bg-white/5 border border-white/5 rounded-lg pl-3 pr-2 py-1.5 text-sm text-white/80 focus:outline-none focus:border-white/20"
+                                        />
+                                        <Clock size={14} className="absolute right-2 top-2 text-white/20" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -186,7 +238,7 @@ export const TaskDialog = ({ isOpen, onClose, onSave, onDelete, initialTask }: T
                         onClick={handleSave}
                         className="px-6 py-2 rounded-xl text-sm font-semibold bg-white text-black hover:bg-white/90 transition-colors"
                     >
-                        Save Changes
+                        {initialTask ? 'Save Changes' : 'Create Task'}
                     </button>
                 </div>
 

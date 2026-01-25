@@ -43,6 +43,7 @@ import {
   createBoard,
   subscribeToBoards,
   addTask as firebaseAddTask,
+  createTask as firebaseCreateTask,
   updateTask as firebaseUpdateTask,
   moveTask as firebaseMoveTask,
   deleteTask as firebaseDeleteTask,
@@ -73,11 +74,13 @@ const SortableTaskItem = ({
   task,
   onDelete,
   onEdit,
+  onComplete,
   isVerticalView
 }: {
   task: Task;
   onDelete: (id: string) => void;
   onEdit: (task: Task) => void;
+  onComplete: (task: Task) => void;
   isVerticalView?: boolean;
 }) => {
   const {
@@ -95,6 +98,12 @@ const SortableTaskItem = ({
     },
   });
 
+  const priorityColors = {
+    High: "bg-red-500",
+    Medium: "bg-yellow-500",
+    Low: "bg-blue-500"
+  };
+
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
@@ -107,21 +116,45 @@ const SortableTaskItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none ${isVerticalView ? 'p-2 flex items-center justify-between gap-4 mb-2' : 'p-3 mb-3'
+      onClick={() => onEdit(task)}
+      className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none flex flex-col justify-between ${isVerticalView ? 'p-3 flex-row items-center gap-4 mb-2' : 'p-3 mb-3 min-h-[100px]'
         }`}
     >
-      <div className={`flex justify-between items-start gap-2 ${isVerticalView ? 'flex-1 items-center' : ''}`}>
-        <p className={`text-white/80 break-all ${isVerticalView ? 'text-sm font-medium mb-0' : 'text-sm mb-2'}`}>
+      <div className={`flex flex-col gap-2 ${isVerticalView ? 'flex-1' : 'w-full'}`}>
+        {/* Header: Priority & Grip */}
+        <div className="flex justify-between items-center w-full">
+          {task.priority && (
+            <div className={`w-2 h-2 rounded-full ${priorityColors[task.priority] || "bg-gray-500"}`} title={`${task.priority} Priority`} />
+          )}
+          {!isVerticalView && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+              <GripVertical size={14} className="text-white/20" />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <p className={`text-white/90 break-all leading-snug ${isVerticalView ? 'text-sm font-medium mb-0' : 'text-sm mb-1'}`}>
           {task.content}
         </p>
-        {!isVerticalView && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical size={14} className="text-white/20" />
-          </div>
-        )}
+
+        {/* Deadline & Meta */}
+        <div className="flex items-center gap-3 text-[10px] text-white/40 mt-1">
+          {task.deadline && (
+            <div className="flex items-center gap-1 text-white/60 bg-white/5 px-1.5 py-0.5 rounded">
+              <Calendar size={10} />
+              <span>
+                {task.deadline.toDate
+                  ? task.deadline.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                  : new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          )}
+          {/* Estimated Time or Time Spent could go here too if desired */}
+        </div>
       </div>
 
-      <div className={`flex items-center justify-between ${isVerticalView ? 'gap-4 border-t-0 pt-0' : 'mt-2 pt-2 border-t border-white/5'}`}>
+      <div className={`flex items-center justify-between ${isVerticalView ? 'gap-2 border-t-0 pt-0' : 'mt-2 pt-2 border-t border-white/5 w-full'}`}>
         <span className="text-[10px] text-white/30 whitespace-nowrap">
           {task.createdAt?.toDate
             ? task.createdAt.toDate().toLocaleDateString()
@@ -129,21 +162,44 @@ const SortableTaskItem = ({
         </span>
 
         <div
-          className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
           onPointerDown={(e) => e.stopPropagation()}
         >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task); // Quick View / Edit
+            }}
+            className="p-1 hover:bg-white/10 rounded text-white/50 hover:text-white"
+            title="Quick View"
+          >
+            <Layout size={12} />
+          </button>
+
           {task.column !== "Done" && task.column !== "Finished" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(task.id);
-              }}
-              className="p-1 hover:bg-red-500/20 rounded text-white/50 hover:text-red-400"
-              title="Delete"
-            >
-              <X size={12} />
-            </button>
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete(task);
+                }}
+                className="p-1 hover:bg-green-500/20 rounded text-white/50 hover:text-green-400"
+                title="Mark as Done"
+              >
+                <CheckCircle2 size={12} />
+              </button>
+            </>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.id);
+            }}
+            className="p-1 hover:bg-red-500/20 rounded text-white/50 hover:text-red-400"
+            title="Delete"
+          >
+            <X size={12} />
+          </button>
         </div>
       </div>
     </div>
@@ -318,24 +374,53 @@ export const TasksView = () => {
     );
   };
 
-  const handleAddTask = async (column: ColumnType) => {
-    if (activeTaskContent.trim() && selectedBoardId) {
-      await firebaseAddTask(selectedBoardId, activeTaskContent.trim(), column);
-      setActiveTaskContent("");
+  const handleSaveTask = async (taskId: string | undefined, updates: Partial<Task>) => {
+    if (taskId) {
+      // Update existing
+      await firebaseUpdateTask(taskId, updates);
+      setEditingTask(null);
+    } else if (isAddingTask && selectedBoardId) {
+      // Create new
+      // We need to pass required fields. 'content' and 'column' are mandatory.
+      // The updates object from TaskDialog will contain content, description, priority, deadline, etc.
+      // But addTask expects explicit args. Let's update addTask signature OR call addDoc here directly OR update addTask to take an object.
+      // Let's stick to calling firebaseAddTask but we might need to update it or manually construct the call.
+      // Actually, the Plan said "Implement handleCreateTask to receive data...".
+
+      // Let's check kanban-service.ts addTask signature:
+      // export const addTask = async (boardId: string, content: string, column: ColumnType) => ...
+      // It sets priority to Medium by default. It doesn't take other fields yet.
+      // I should probably update kanban-service.ts to accept a Task object or Partial<Task>.
+
+      // CHECK: I'll update this handler to use a new service method or just modify addTask in next step if needed. 
+      // For now, let's assume I will update kanban-service to allow passing full task details.
+      // Wait, I haven't updated addTask in kanban-service to take extra fields yet!
+      // I added fields to the interface but addTask still only takes (boardId, content, column).
+
+      // I should update kanban-service.ts first or do it effectively here.
+      // Let's use firebaseAddTask but I'll need to update it to accept the other fields.
+      // For this step, I'll write the logic assuming firebaseAddTask will be updated or I'll implement a flexible adder.
+
+      // Actually, let's just make `handleSaveTask` call `firebaseAddTask` with the content, and then immediately `firebaseUpdateTask` with the rest? No, that's sloppy.
+      // I will update TasksView to assume `firebaseAddTask` can take an object or I will create `createTask` in service.
+
+      // Let's temporarily call a new function `createTask` which I will add to service.
+      await firebaseCreateTask(selectedBoardId, updates as any, isAddingTask);
       setIsAddingTask(null);
     }
-  };
-
-  const handleUpdateTask = async (taskId: string | undefined, updates: Partial<Task>) => {
-    if (taskId) {
-      await firebaseUpdateTask(taskId, updates);
-    }
-    setEditingTask(null);
   };
 
   const handleDeleteTask = async (taskId: string) => {
     await firebaseDeleteTask(taskId);
     setEditingTask(null);
+  };
+
+  const handleCompleteTask = async (task: Task) => {
+    // Find "Done" or "Finished" column
+    const doneCol = boardColumns.includes("Done") ? "Done" : (boardColumns.includes("Finished") ? "Finished" : null);
+    if (doneCol) {
+      await firebaseMoveTask(task.id, doneCol);
+    }
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -712,6 +797,7 @@ export const TasksView = () => {
                         task={task}
                         onDelete={handleDeleteTask}
                         onEdit={setEditingTask}
+                        onComplete={handleCompleteTask}
                         isVerticalView={isVerticalView}
                       />
                     ))}
@@ -730,53 +816,18 @@ export const TasksView = () => {
                   </div>
                 </SortableContext>
 
-                {/* Add Task Input */}
+                {/* Add Task Button */}
                 <div className={`${isVerticalView ? 'mt-3 mb-2' : 'p-3 border-t border-white/5'}`}>
-                  {isAddingTask === column ? (
-                    <div className="space-y-2">
-                      {/* Input UI */}
-                      <textarea
-                        autoFocus
-                        value={activeTaskContent}
-                        onChange={(e) => setActiveTaskContent(e.target.value)}
-                        placeholder="What needs to be done?"
-                        className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-sm text-white placeholder:text-white/20 focus:outline-none resize-none"
-                        rows={2}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddTask(column);
-                          }
-                          if (e.key === "Escape") setIsAddingTask(null);
-                        }}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAddTask(column)}
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs py-1.5 rounded-lg transition-colors"
-                        >
-                          Add
-                        </button>
-                        <button
-                          onClick={() => setIsAddingTask(null)}
-                          className="px-3 hover:bg-white/5 text-white/50 text-xs py-1.5 rounded-lg transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setIsAddingTask(column);
-                        setActiveTaskContent("");
-                      }}
-                      className={`text-xs hover:bg-white/5 transition-all flex items-center gap-2 ${isVerticalView ? 'w-auto px-4 py-2 rounded-lg text-white/30 hover:text-white border border-transparent hover:border-white/10' : 'w-full py-2 rounded-lg border border-dashed border-white/10 text-white/40 hover:text-white hover:border-white/20 justify-center'}`}
-                    >
-                      <Plus size={12} />
-                      Add Task
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setIsAddingTask(column);
+                      setActiveTaskContent("");
+                    }}
+                    className={`text-xs hover:bg-white/5 transition-all flex items-center gap-2 ${isVerticalView ? 'w-auto px-4 py-2 rounded-lg text-white/30 hover:text-white border border-transparent hover:border-white/10' : 'w-full py-2 rounded-lg border border-dashed border-white/10 text-white/40 hover:text-white hover:border-white/20 justify-center'}`}
+                  >
+                    <Plus size={12} />
+                    Add Task
+                  </button>
                 </div>
               </KanbanColumn>
             ))}
@@ -795,9 +846,12 @@ export const TasksView = () => {
       </DndContext>
 
       <TaskDialog
-        isOpen={!!editingTask}
-        onClose={() => setEditingTask(null)}
-        onSave={handleUpdateTask}
+        isOpen={!!editingTask || !!isAddingTask}
+        onClose={() => {
+          setEditingTask(null);
+          setIsAddingTask(null);
+        }}
+        onSave={handleSaveTask}
         onDelete={handleDeleteTask}
         initialTask={editingTask}
       />
