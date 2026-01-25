@@ -20,11 +20,10 @@ const ToolbarButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`p-1.5 rounded-lg transition-colors ${
-      active
+    className={`p-1.5 rounded-lg transition-colors ${active
         ? "bg-white/20 text-white"
         : "text-white/50 hover:text-white hover:bg-white/10"
-    }`}
+      }`}
   >
     {children}
   </button>
@@ -50,6 +49,13 @@ export const NoteEditor = ({
       },
     },
   });
+
+  // Sync content updates from parent
+  React.useEffect(() => {
+    if (editor && content && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   if (!editor) {
     return null;
