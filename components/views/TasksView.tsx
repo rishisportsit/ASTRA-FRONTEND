@@ -413,6 +413,15 @@ export const TasksView = () => {
     setDeleteConfirmation({ isOpen: false, taskId: null });
   };
 
+  const handleCompleteTask = async (task: Task) => {
+    if (!task.id) return;
+    try {
+      await firebaseUpdateTask(task.id, { column: "Done" });
+    } catch (error) {
+      console.error("Failed to mark task as complete:", error);
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveId(active.id as string);
