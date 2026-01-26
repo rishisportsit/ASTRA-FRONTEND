@@ -25,7 +25,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
   // We can remove the local listener and rely on Context, OR just use Context for the role.
   // Let's rely on Context for everything eventually, but for minimal diff, just use appUser for role checking.
 
-  const visibleTabs = tabsConfig.filter(tab => {
+  const visibleTabs = tabsConfig.filter((tab) => {
     if (!tab.allowedRoles) return true;
     if (!appUser) return false;
     return tab.allowedRoles.includes(appUser.role);
@@ -33,7 +33,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
 
   // Ensure active tab is visible
   useEffect(() => {
-    const isVisible = visibleTabs.find(t => t.id === activeTabId);
+    const isVisible = visibleTabs.find((t) => t.id === activeTabId);
     if (!isVisible && visibleTabs.length > 0) {
       setActiveTabId(visibleTabs[0].id);
     }
@@ -85,7 +85,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const activeTab =
@@ -108,7 +108,9 @@ export default function Dashboard({ onLock }: DashboardProps) {
         {/* Auto-Lock Timer Widget */}
         <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-2">
           <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
-            <div className={`text-sm font-mono font-medium ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-white/80'}`}>
+            <div
+              className={`text-sm font-mono font-medium ${timeLeft < 60 ? "text-red-400 animate-pulse" : "text-white/80"}`}
+            >
               {formatTime(timeLeft)}
             </div>
             <div className="h-4 w-[1px] bg-white/10" />
@@ -121,11 +123,21 @@ export default function Dashboard({ onLock }: DashboardProps) {
                   className="peer sr-only"
                 />
                 <div className="w-4 h-4 rounded border border-white/30 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all" />
-                <svg className="absolute inset-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className="absolute inset-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <span className="text-xs text-white/60 group-hover:text-white/90 transition-colors">I am using it now</span>
+              <span className="text-xs text-white/60 group-hover:text-white/90 transition-colors">
+                I am using it now
+              </span>
             </label>
           </div>
         </div>
@@ -181,10 +193,14 @@ export default function Dashboard({ onLock }: DashboardProps) {
           <button
             onClick={() => setIsLoginOpen(true)}
             className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white border border-white/5 flex items-center justify-center transition-all overflow-hidden"
-            title={user ? "Account" : "Sign In"}
+            title={appUser ? "Account" : "Sign In"}
           >
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+            {appUser?.avatarUrl ? (
+              <img
+                src={appUser.avatarUrl}
+                alt={appUser.username || "User"}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <UserIcon size={14} />
             )}
@@ -243,7 +259,10 @@ export default function Dashboard({ onLock }: DashboardProps) {
         {/* Scrollable Content Area */}
         <main
           className="w-full h-full overflow-y-auto pt-48 md:pt-32 pb-6 px-4 md:px-8 no-scrollbar mask-gradient-top"
-          style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)' }}
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, transparent 0%, black 15%, black 100%)",
+          }}
         >
           <GreetCard pageTitle={activeTab.label} caption={activeTab.caption} />
           <AnimatePresence mode="wait">

@@ -1,48 +1,132 @@
-export const OverviewView = () => (
-  <div className="space-y-6">
+import { useState, useEffect } from "react";
+import { MarketStatsCard } from "@/components/ui/cards/MarketStatsCard";
+import { Wallet, Activity } from "lucide-react";
+import { subscribeToUserBalances, subscribeToDeals, UserBalance, Deal } from "@/utils/forex-service";
+import { DataTable, Column } from "@/components/ui/data-table";
 
+const dealColumns: Column<Deal>[] = [
+  {
+    key: "time",
+    header: "Time",
+    render: (deal) => <div className="text-xs text-white/60">{new Date(deal.time).toLocaleString()}</div>,
+    sortable: true,
+  },
+  {
+    key: "ticket",
+    header: "Ticket",
+    render: (deal) => <div className="font-mono text-xs text-white/40">#{deal.ticket}</div>,
+    sortable: true,
+  },
+  {
+    key: "symbol",
+    header: "Symbol",
+    render: (deal) => <div className="font-bold text-white">{deal.symbol}</div>,
+    sortable: true,
+  },
+  {
+    key: "side",
+    header: "Side",
+    render: (deal) => (
+      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${deal.side === "BUY" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+        {deal.side}
+      </span>
+    ),
+    sortable: true,
+  },
+  {
+    key: "volume",
+    header: "Volume",
+    render: (deal) => <div className="text-white/80">{deal.volume}</div>,
+    sortable: true,
+  },
+  {
+    key: "price",
+    header: "Price",
+    render: (deal) => <div className="text-white/60 text-xs">{deal.price}</div>,
+    sortable: true,
+  },
+  {
+    key: "profit_usd",
+    header: "Profit",
+    render: (deal) => (
+      <div className={`font-bold ${deal.profit_usd > 0 ? "text-green-400" : "text-red-400"}`}>
+        {deal.profit_usd > 0 ? "+" : ""}{deal.profit_usd.toLocaleString()}
+      </div>
+    ),
+    sortable: true,
+  },
+];
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="h-40 rounded-3xl bg-gradient-to-br from-red-500/10 to-purple-500/10 backdrop-blur-2xl border border-white/20 p-6 flex flex-col justify-between shadow-lg">
-        <span className="text-white/60 text-sm font-medium uppercase tracking-wider">
-          Total Balance
-        </span>
-        <span className="text-4xl font-bold">$12,450.00</span>
-      </div>
-      <div className="h-40 rounded-3xl bg-white/5 backdrop-blur-2xl border border-white/20 p-6 flex flex-col justify-between shadow-lg">
-        <span className="text-white/60 text-sm font-medium uppercase tracking-wider">
-          Profit
-        </span>
-        <span className="text-4xl font-bold text-green-400">+12%</span>
-      </div>
-    </div>
+export const OverviewView = () => {
+  const [userBalances, setUserBalances] = useState<UserBalance[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [activeAccount, setActiveAccount] = useState<UserBalance | undefined>(undefined);
 
-    <div className="rounded-3xl bg-black/10 backdrop-blur-2xl border border-white/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Activity</h3>
-        <button className="text-xs bg-white/10 border border-white/10 px-3 py-1 rounded-full hover:bg-white/20 transition-colors">
-          See All
-        </button>
-      </div>
-      <div className="space-y-2">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between p-3 rounded-2xl hover:bg-white/10 transition-colors border border-transparent hover:border-white/10"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-white/5">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+  useEffect(() => {
+    const unsubscribeBalances = subscribeToUserBalances((data) => {
+      setUserBalances(data);
+    });
+    const unsubscribeDeals = subscribeToDeals((data) => {
+      setDeals(data);
+    });
+    return () => {
+      unsubscribeBalances();
+      unsubscribeDeals();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (userBalances.length > 0 && !activeAccount) {
+      setActiveAccount(userBalances[0]);
+    }
+  }, [userBalances, activeAccount]);
+
+  // Calculate Wins/Losses
+  const wins = deals.filter(d => d.profit_usd > 0).length;
+  const losses = deals.filter(d => d.profit_usd <= 0).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MarketStatsCard
+          title="Total Balance"
+          value={activeAccount ? `$${activeAccount.balance.toLocaleString()}` : "$0.00"}
+          icon={Wallet}
+          trend={{ value: "+0.0%", isPositive: true, label: "today" }}
+          gradient="from-emerald-900/40 to-emerald-600/10"
+        />
+        <MarketStatsCard
+          title="Equity"
+          value={activeAccount ? `$${activeAccount.equity.toLocaleString()}` : "$0.00"}
+          icon={Activity}
+          gradient="from-blue-900/40 to-blue-600/10"
+          subContent={
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1 text-xs text-white/50">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> {wins}
+                Wins
               </div>
-              <div>
-                <div className="font-medium">Transaction #{i}23</div>
-                <div className="text-xs text-white/40">Today, 12:00 PM</div>
+              <div className="flex items-center gap-1 text-xs text-white/50">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> {losses}
+                Loss
               </div>
             </div>
-            <span className="font-semibold text-white/90">-$120.00</span>
-          </div>
-        ))}
+          }
+        />
+      </div>
+
+      <div className="rounded-3xl bg-black/10 backdrop-blur-2xl border border-white/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+        <div className="mb-4 px-2">
+          <h3 className="text-lg font-semibold">Activity</h3>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+          <DataTable
+            columns={dealColumns}
+            data={deals}
+            perPage={5}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};

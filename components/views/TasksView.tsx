@@ -13,7 +13,7 @@ import {
   Rows,
   ArrowRight,
   Flag,
-  Calendar
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -54,6 +54,7 @@ import {
   ColumnType,
 } from "@/utils/kanban-service";
 import { TaskDialog } from "../TaskDialog";
+import { DeleteConfirmationDialog } from "../DeleteConfirmationDialog";
 
 const AVAILABLE_COLUMNS: ColumnType[] = [
   "Backlog",
@@ -65,10 +66,15 @@ const AVAILABLE_COLUMNS: ColumnType[] = [
   // Legacy/Custom
   "Dock",
   "Finished",
-  "Parked"
+  "Parked",
 ];
 
-const DEFAULT_SELECTION: ColumnType[] = ["To Do", "In Progress", "In Review", "Done"];
+const DEFAULT_SELECTION: ColumnType[] = [
+  "To Do",
+  "In Progress",
+  "In Review",
+  "Done",
+];
 
 // Sortable Task Component
 const SortableTaskItem = ({
@@ -76,7 +82,7 @@ const SortableTaskItem = ({
   onDelete,
   onEdit,
   onComplete,
-  isVerticalView
+  isVerticalView,
 }: {
   task: Task;
   onDelete: (id: string) => void;
@@ -102,7 +108,7 @@ const SortableTaskItem = ({
   const priorityColors = {
     High: "bg-red-500",
     Medium: "bg-yellow-500",
-    Low: "bg-blue-500"
+    Low: "bg-blue-500",
   };
 
   const style = {
@@ -118,11 +124,17 @@ const SortableTaskItem = ({
       {...attributes}
       {...listeners}
       onClick={() => onEdit(task)}
-      className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none flex flex-col justify-between ${isVerticalView ? 'p-3 flex-row items-center gap-4 mb-2' : 'p-3 mb-3 min-h-[100px]'
+      className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none flex flex-col justify-between ${isVerticalView
+          ? "p-3 flex-row items-center gap-4 mb-2"
+          : "p-3 mb-3 min-h-[100px]"
         }`}
     >
-      <div className={`flex justify-between items-start gap-2 ${isVerticalView ? 'flex-1 items-center' : ''}`}>
-        <p className={`text-white/80 break-all ${isVerticalView ? 'text-sm font-medium mb-0' : 'text-sm mb-2'}`}>
+      <div
+        className={`flex justify-between items-start gap-2 ${isVerticalView ? "flex-1 items-center" : ""}`}
+      >
+        <p
+          className={`text-white/80 break-all ${isVerticalView ? "text-sm font-medium mb-0" : "text-sm mb-2"}`}
+        >
           {task.content}
         </p>
         {!isVerticalView && (
@@ -132,7 +144,9 @@ const SortableTaskItem = ({
         )}
       </div>
 
-      <div className={`flex items-center justify-between ${isVerticalView ? 'gap-4 border-t-0 pt-0' : 'mt-2 pt-2 border-t border-white/5'}`}>
+      <div
+        className={`flex items-center justify-between ${isVerticalView ? "gap-4 border-t-0 pt-0" : "mt-2 pt-2 border-t border-white/5"}`}
+      >
         <span className="text-[10px] text-white/30 whitespace-nowrap">
           {task.createdAt?.toDate
             ? task.createdAt.toDate().toLocaleDateString()
@@ -188,7 +202,7 @@ const KanbanColumn = ({
   column,
   children,
   isOver,
-  isVerticalView
+  isVerticalView,
 }: {
   column: ColumnType;
   children: React.ReactNode;
@@ -210,21 +224,21 @@ const KanbanColumn = ({
       <div
         ref={setNodeRef}
         className={`flex flex-col rounded-2xl border transition-colors duration-200 overflow-hidden w-full ${isActive
-          ? "bg-white/10 border-blue-500/30"
-          : "bg-white/5 border-white/5 backdrop-blur-sm"
+            ? "bg-white/10 border-blue-500/30"
+            : "bg-white/5 border-white/5 backdrop-blur-sm"
           }`}
       >
         {children}
       </div>
-    )
+    );
   }
 
   return (
     <div
       ref={setNodeRef}
       className={`flex-none w-72 md:w-80 flex flex-col rounded-2xl border transition-colors duration-200 overflow-hidden h-full max-h-[600px] ${isActive
-        ? "bg-white/10 border-blue-500/30"
-        : "bg-white/5 border-white/5 backdrop-blur-sm"
+          ? "bg-white/10 border-blue-500/30"
+          : "bg-white/5 border-white/5 backdrop-blur-sm"
         }`}
     >
       {children}
@@ -240,9 +254,12 @@ export const TasksView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; taskId: string | null }>({
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    taskId: string | null;
+  }>({
     isOpen: false,
-    taskId: null
+    taskId: null,
   });
 
   // Layout preference (could be saved to local storage)
@@ -255,7 +272,8 @@ export const TasksView = () => {
   // Board Creation State
   const [newBoardName, setNewBoardName] = useState("");
   const [isCreatingBoard, setIsCreatingBoard] = useState(false);
-  const [selectedColumns, setSelectedColumns] = useState<ColumnType[]>(DEFAULT_SELECTION);
+  const [selectedColumns, setSelectedColumns] =
+    useState<ColumnType[]>(DEFAULT_SELECTION);
   const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
 
   const [activeTaskContent, setActiveTaskContent] = useState("");
@@ -270,7 +288,10 @@ export const TasksView = () => {
     useSensor(TouchSensor),
   );
 
-  const activeBoard = useMemo(() => boards.find((b) => b.id === selectedBoardId), [boards, selectedBoardId]);
+  const activeBoard = useMemo(
+    () => boards.find((b) => b.id === selectedBoardId),
+    [boards, selectedBoardId],
+  );
 
   const boardColumns = useMemo(() => {
     return activeBoard?.columns || DEFAULT_SELECTION;
@@ -278,7 +299,9 @@ export const TasksView = () => {
 
   const tasksByColumn = useMemo(() => {
     const acc: Record<string, Task[]> = {};
-    boardColumns.forEach(col => { acc[col] = [] });
+    boardColumns.forEach((col) => {
+      acc[col] = [];
+    });
 
     tasks.forEach((task) => {
       if (acc[task.column]) {
@@ -286,7 +309,11 @@ export const TasksView = () => {
       } else {
         // If a task ends up in a legacy column, or one not visible, we can group it under the first one or a "Parked" one if it exists.
         // For now, let's look for "Backlog" or "Parked"
-        const fallback = boardColumns.includes("Backlog") ? "Backlog" : (boardColumns.includes("Parked") ? "Parked" : boardColumns[0]);
+        const fallback = boardColumns.includes("Backlog")
+          ? "Backlog"
+          : boardColumns.includes("Parked")
+            ? "Parked"
+            : boardColumns[0];
         if (acc[fallback]) acc[fallback].push(task);
       }
     });
@@ -303,7 +330,9 @@ export const TasksView = () => {
       },
       (err) => {
         console.error("Failed to load boards:", err);
-        setError("Unable to load boards. Please check your connection or configuration.");
+        setError(
+          "Unable to load boards. Please check your connection or configuration.",
+        );
         setIsLoading(false);
       },
     );
@@ -333,7 +362,8 @@ export const TasksView = () => {
     if (newBoardName.trim()) {
       try {
         setError(null);
-        const columnsToSave = selectedColumns.length > 0 ? selectedColumns : DEFAULT_SELECTION;
+        const columnsToSave =
+          selectedColumns.length > 0 ? selectedColumns : DEFAULT_SELECTION;
 
         setIsCreatingBoard(false);
         const boardId = await createBoard(newBoardName.trim(), columnsToSave);
@@ -341,7 +371,6 @@ export const TasksView = () => {
         setNewBoardName("");
         setSelectedColumns(DEFAULT_SELECTION);
         setSelectedBoardId(boardId);
-
       } catch (error) {
         console.error("Failed to create board", error);
         setError("Failed to create board. Please try again.");
@@ -362,17 +391,20 @@ export const TasksView = () => {
         setError("Failed to delete board. Please try again.");
       }
     }
-  }
+  };
 
   const toggleColumnSelection = (column: ColumnType) => {
-    setSelectedColumns(prev =>
+    setSelectedColumns((prev) =>
       prev.includes(column)
-        ? prev.filter(c => c !== column)
-        : [...prev, column]
+        ? prev.filter((c) => c !== column)
+        : [...prev, column],
     );
   };
 
-  const handleSaveTask = async (taskId: string | undefined, updates: Partial<Task>) => {
+  const handleSaveTask = async (
+    taskId: string | undefined,
+    updates: Partial<Task>,
+  ) => {
     if (taskId) {
       // Update existing
       await firebaseUpdateTask(taskId, updates);
@@ -390,7 +422,7 @@ export const TasksView = () => {
       // It sets priority to Medium by default. It doesn't take other fields yet.
       // I should probably update kanban-service.ts to accept a Task object or Partial<Task>.
 
-      // CHECK: I'll update this handler to use a new service method or just modify addTask in next step if needed. 
+      // CHECK: I'll update this handler to use a new service method or just modify addTask in next step if needed.
       // For now, let's assume I will update kanban-service to allow passing full task details.
       // Wait, I haven't updated addTask in kanban-service to take extra fields yet!
       // I added fields to the interface but addTask still only takes (boardId, content, column).
@@ -408,7 +440,10 @@ export const TasksView = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId: string | undefined, updates: Partial<Task>) => {
+  const handleUpdateTask = async (
+    taskId: string | undefined,
+    updates: Partial<Task>,
+  ) => {
     if (taskId) {
       await firebaseUpdateTask(taskId, updates);
     }
@@ -442,7 +477,9 @@ export const TasksView = () => {
     const { active } = event;
     setActiveId(active.id as string);
     setActiveTask(
-      active.data.current?.task || tasks.find((t) => t.id === active.id) || null,
+      active.data.current?.task ||
+      tasks.find((t) => t.id === active.id) ||
+      null,
     );
   };
 
@@ -644,11 +681,15 @@ export const TasksView = () => {
             <h2 className="text-2xl font-bold text-white mb-2">
               Create New Board
             </h2>
-            <p className="text-white/40 mb-6 text-sm">Customize your Kanban workflow.</p>
+            <p className="text-white/40 mb-6 text-sm">
+              Customize your Kanban workflow.
+            </p>
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider">Board Name</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider">
+                  Board Name
+                </label>
                 <input
                   type="text"
                   value={newBoardName}
@@ -661,26 +702,34 @@ export const TasksView = () => {
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider">Statuses</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider">
+                  Statuses
+                </label>
                 <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                  {AVAILABLE_COLUMNS.map(col => {
+                  {AVAILABLE_COLUMNS.map((col) => {
                     const isSelected = selectedColumns.includes(col);
                     return (
                       <button
                         key={col}
                         onClick={() => toggleColumnSelection(col)}
                         className={`flex items-center gap-3 p-3 rounded-lg border text-sm transition-all ${isSelected
-                          ? "bg-blue-500/10 border-blue-500/50 text-white"
-                          : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
+                            ? "bg-blue-500/10 border-blue-500/50 text-white"
+                            : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
                           }`}
                       >
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? "border-blue-400 bg-blue-400" : "border-white/30"
-                          }`}>
-                          {isSelected && <Check size={10} className="text-black" />}
+                        <div
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected
+                              ? "border-blue-400 bg-blue-400"
+                              : "border-white/30"
+                            }`}
+                        >
+                          {isSelected && (
+                            <Check size={10} className="text-black" />
+                          )}
                         </div>
                         {col}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -704,53 +753,25 @@ export const TasksView = () => {
           </motion.div>
         )}
 
-
         {/* DELETE BOARD CONFIRMATION DIALOG */}
-        <AnimatePresence>
-          {boardToDelete && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setBoardToDelete(null)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-md bg-[#111] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden ring-1 ring-white/10"
-              >
-                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
-                  <AlertCircle size={24} className="text-red-500" />
-                </div>
-
-                <h3 className="text-xl font-bold text-white text-center mb-2">Delete Board?</h3>
-                <p className="text-white/50 text-center text-sm mb-6">
-                  Are you sure you want to delete <span className="text-white font-medium">"{boardToDelete.name}"</span>?
-                  First we will delete all tasks in this board and then the board itself. <br />This action cannot be undone.
-                </p>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setBoardToDelete(null)}
-                    className="flex-1 py-2.5 rounded-xl bg-white/5 text-white/70 font-semibold hover:bg-white/10 transition-colors hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteBoard}
-                    className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div >
+        <DeleteConfirmationDialog
+          isOpen={!!boardToDelete}
+          onClose={() => setBoardToDelete(null)}
+          onConfirm={handleDeleteBoard}
+          title="Delete Board?"
+          description={
+            <p className="text-white/50 text-center text-sm">
+              Are you sure you want to delete{" "}
+              <span className="text-white font-medium">
+                "{boardToDelete?.name}"
+              </span>
+              ? First we will delete all tasks in this board and then the board
+              itself. <br />
+              This action cannot be undone.
+            </p>
+          }
+        />
+      </div>
     );
   }
 
@@ -791,14 +812,14 @@ export const TasksView = () => {
           <div className="bg-white/5 p-1 rounded-lg flex border border-white/10">
             <button
               onClick={() => setIsVerticalView(false)}
-              className={`p-1.5 rounded-md transition-all ${!isVerticalView ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+              className={`p-1.5 rounded-md transition-all ${!isVerticalView ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/80"}`}
               title="Board View"
             >
               <Columns size={16} />
             </button>
             <button
               onClick={() => setIsVerticalView(true)}
-              className={`p-1.5 rounded-md transition-all ${isVerticalView ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+              className={`p-1.5 rounded-md transition-all ${isVerticalView ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/80"}`}
               title="List View"
             >
               <Rows size={16} />
@@ -828,8 +849,12 @@ export const TasksView = () => {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className={`flex-1 ${isVerticalView ? 'overflow-y-auto px-4' : 'overflow-x-auto overflow-y-hidden'}`}>
-          <div className={`${isVerticalView ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 w-full' : 'flex h-full gap-4 min-w-full pb-4'}`}>
+        <div
+          className={`flex-1 ${isVerticalView ? "overflow-y-auto px-4" : "overflow-x-auto overflow-y-hidden"}`}
+        >
+          <div
+            className={`${isVerticalView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 w-full" : "flex h-full gap-4 min-w-full pb-4"}`}
+          >
             {boardColumns.map((column) => (
               <KanbanColumn
                 key={column}
@@ -837,23 +862,32 @@ export const TasksView = () => {
                 isVerticalView={isVerticalView}
               >
                 {/* Column Header */}
-                <div className={`flex items-center justify-between ${isVerticalView ? 'p-2 mb-2 bg-transparent text-white/50 border-b border-white/10' : 'p-4 border-b border-white/5 bg-white/5'}`}>
-                  <h3 className={`font-semibold text-sm flex items-center gap-2 ${isVerticalView ? 'text-white/80' : 'text-white/90'}`}>
+                <div
+                  className={`flex items-center justify-between ${isVerticalView ? "p-2 mb-2 bg-transparent text-white/50 border-b border-white/10" : "p-4 border-b border-white/5 bg-white/5"}`}
+                >
+                  <h3
+                    className={`font-semibold text-sm flex items-center gap-2 ${isVerticalView ? "text-white/80" : "text-white/90"}`}
+                  >
                     {/* Status Dot */}
                     <span
-                      className={`w-2 h-2 rounded-full ${column === "To Do" || column === "Backlog" || column === "Dock" ? "bg-blue-400"
-                        : column === "In Progress"
-                          ? "bg-yellow-400"
-                          : column === "In Review" || column === "Testing"
-                            ? "bg-purple-400"
-                            : column === "Done" || column === "Finished"
-                              ? "bg-green-400"
-                              : "bg-gray-400"
+                      className={`w-2 h-2 rounded-full ${column === "To Do" ||
+                          column === "Backlog" ||
+                          column === "Dock"
+                          ? "bg-blue-400"
+                          : column === "In Progress"
+                            ? "bg-yellow-400"
+                            : column === "In Review" || column === "Testing"
+                              ? "bg-purple-400"
+                              : column === "Done" || column === "Finished"
+                                ? "bg-green-400"
+                                : "bg-gray-400"
                         }`}
                     />
                     {column}
                   </h3>
-                  <span className={`bg-white/10 text-white/50 px-2 py-0.5 rounded text-[10px] ${isVerticalView ? 'bg-white/5' : ''}`}>
+                  <span
+                    className={`bg-white/10 text-white/50 px-2 py-0.5 rounded text-[10px] ${isVerticalView ? "bg-white/5" : ""}`}
+                  >
                     {tasksByColumn[column]?.length || 0}
                   </span>
                 </div>
@@ -863,7 +897,9 @@ export const TasksView = () => {
                   items={(tasksByColumn[column] || []).map((t) => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className={`custom-scrollbar ${isVerticalView ? 'space-y-1' : 'flex-1 overflow-y-auto p-3 space-y-0'}`}>
+                  <div
+                    className={`custom-scrollbar ${isVerticalView ? "space-y-1" : "flex-1 overflow-y-auto p-3 space-y-0"}`}
+                  >
                     {(tasksByColumn[column] || []).map((task) => (
                       <SortableTaskItem
                         key={task.id}
@@ -876,27 +912,31 @@ export const TasksView = () => {
                     ))}
 
                     {/* Drop placeholder for empty columns */}
-                    {(tasksByColumn[column] || []).length === 0 && !isVerticalView && (
-                      <div className="h-20 flex items-center justify-center border-2 border-dashed border-white/5 rounded-xl m-2 bg-white/5">
-                        <p className="text-[10px] text-white/20">Drop here</p>
-                      </div>
-                    )}
-                    {(tasksByColumn[column] || []).length === 0 && isVerticalView && (
-                      <div className="py-2 px-4 border border-dashed border-white/5 rounded-lg text-center">
-                        <p className="text-[10px] text-white/20">Empty</p>
-                      </div>
-                    )}
+                    {(tasksByColumn[column] || []).length === 0 &&
+                      !isVerticalView && (
+                        <div className="h-20 flex items-center justify-center border-2 border-dashed border-white/5 rounded-xl m-2 bg-white/5">
+                          <p className="text-[10px] text-white/20">Drop here</p>
+                        </div>
+                      )}
+                    {(tasksByColumn[column] || []).length === 0 &&
+                      isVerticalView && (
+                        <div className="py-2 px-4 border border-dashed border-white/5 rounded-lg text-center">
+                          <p className="text-[10px] text-white/20">Empty</p>
+                        </div>
+                      )}
                   </div>
                 </SortableContext>
 
                 {/* Add Task Button */}
-                <div className={`${isVerticalView ? 'mt-3 mb-2' : 'p-3 border-t border-white/5'}`}>
+                <div
+                  className={`${isVerticalView ? "mt-3 mb-2" : "p-3 border-t border-white/5"}`}
+                >
                   <button
                     onClick={() => {
                       setIsAddingTask(column);
                       setActiveTaskContent("");
                     }}
-                    className={`text-xs hover:bg-white/5 transition-all flex items-center gap-2 ${isVerticalView ? 'w-auto px-4 py-2 rounded-lg text-white/30 hover:text-white border border-transparent hover:border-white/10' : 'w-full py-2 rounded-lg border border-dashed border-white/10 text-white/40 hover:text-white hover:border-white/20 justify-center'}`}
+                    className={`text-xs hover:bg-white/5 transition-all flex items-center gap-2 ${isVerticalView ? "w-auto px-4 py-2 rounded-lg text-white/30 hover:text-white border border-transparent hover:border-white/10" : "w-full py-2 rounded-lg border border-dashed border-white/10 text-white/40 hover:text-white hover:border-white/20 justify-center"}`}
                   >
                     <Plus size={12} />
                     Add Task
@@ -909,7 +949,9 @@ export const TasksView = () => {
 
         <DragOverlay dropAnimation={dropAnimation}>
           {activeTask ? (
-            <div className={`p-3 rounded-xl bg-white/10 border border-white/20 shadow-2xl backdrop-blur-md cursor-grabbing ${isVerticalView ? 'w-full' : 'w-72 md:w-80 rotate-2'}`}>
+            <div
+              className={`p-3 rounded-xl bg-white/10 border border-white/20 shadow-2xl backdrop-blur-md cursor-grabbing ${isVerticalView ? "w-full" : "w-72 md:w-80 rotate-2"}`}
+            >
               <div className="flex justify-between items-start gap-2">
                 <p className="text-sm text-white mb-2">{activeTask.content}</p>
               </div>
@@ -929,42 +971,13 @@ export const TasksView = () => {
         initialTask={editingTask}
       />
 
-      <AnimatePresence>
-        {deleteConfirmation.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#1C1C1E] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-xl"
-            >
-              <div className="p-6">
-                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 mx-auto">
-                  <AlertCircle className="text-red-500" size={24} />
-                </div>
-                <h3 className="text-lg font-semibold text-white text-center mb-2">Delete Task</h3>
-                <p className="text-white/50 text-center text-sm mb-6">
-                  Are you sure you want to delete this task? This action cannot be undone.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setDeleteConfirmation({ isOpen: false, taskId: null })}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDeleteTask}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div >
+      <DeleteConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, taskId: null })}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+      />
+    </div>
   );
 };

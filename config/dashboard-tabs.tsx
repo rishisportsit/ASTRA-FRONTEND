@@ -1,6 +1,16 @@
 import { ForexView } from "@/components/views/Forex";
+import { GoalsView } from "@/components/views/GoalsView";
 import { OverviewView } from "@/components/views/Overview";
-import { LayoutDashboard, Globe, IndianRupee, Notebook, CheckSquare, MessageCircle, Lock } from "lucide-react";
+import {
+  LayoutDashboard,
+  Globe,
+  IndianRupee,
+  Notebook,
+  CheckSquare,
+  MessageCircle,
+  Lock,
+  Target,
+} from "lucide-react";
 import { IndianView } from "../components/views/Indian";
 import { NotesView } from "@/components/views/NotesView";
 import { TasksView } from "@/components/views/TasksView";
@@ -64,6 +74,14 @@ export const tabsConfig: TabConfig[] = [
     icon: Lock,
     component: <RequestAccessView />,
     allowedRoles: ["user"],
+  },
+  {
+    id: "goals",
+    label: "Goals",
+    caption: "Track your targets",
+    icon: Target,
+    component: <GoalsView />,
+    allowedRoles: ["admin"],
   },
   {
     id: "chat",

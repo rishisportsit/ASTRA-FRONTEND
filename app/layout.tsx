@@ -17,7 +17,6 @@ export const viewport = {
   themeColor: "#000000",
 };
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,12 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${jetbrainsMono.variable} antialiased font-mono`}
-      >
-        <UserProvider>
-          {children}
-        </UserProvider>
+      <body className={`${jetbrainsMono.variable} antialiased font-mono`}>
+        <UserProvider>{children}</UserProvider>
       </body>
     </html>
   );

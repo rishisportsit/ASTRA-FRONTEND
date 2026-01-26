@@ -21,7 +21,9 @@ export const MarketSelector = ({ selected, onSelect }: MarketSelectorProps) => {
           key={option.id}
           onClick={() => onSelect(option.id)}
           className={`relative px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-            selected === option.id ? "text-white shadow-lg" : "text-white/50 hover:text-white"
+            selected === option.id
+              ? "text-white shadow-lg"
+              : "text-white/50 hover:text-white"
           }`}
         >
           {selected === option.id && (
