@@ -1,6 +1,9 @@
 import { ForexView } from "@/components/views/Forex";
 import { GoalsView } from "@/components/views/GoalsView";
 import { OverviewView } from "@/components/views/Overview";
+import { ChatView } from "@/components/views/ChatView";
+import { LLMChatView } from "@/components/views/LLMChatView";
+import React from "react";
 import {
   LayoutDashboard,
   Globe,
@@ -10,13 +13,12 @@ import {
   MessageCircle,
   Lock,
   Target,
+  Sparkles,
 } from "lucide-react";
-import { IndianView } from "../components/views/Indian";
+import { IndianView } from "@/components/views/Indian";
 import { NotesView } from "@/components/views/NotesView";
 import { TasksView } from "@/components/views/TasksView";
 import { RequestAccessView } from "@/components/views/RequestAccessView";
-import { ChatView } from "@/components/views/ChatView";
-import React from "react";
 
 export interface TabConfig {
   id: string;
@@ -89,5 +91,12 @@ export const tabsConfig: TabConfig[] = [
     caption: "Connect with others",
     icon: MessageCircle,
     component: <ChatView />,
+  },
+  {
+    id: "llm-chat",
+    label: "LLM",
+    caption: "Chat with AI",
+    icon: Sparkles,
+    component: <LLMChatView />,
   },
 ];

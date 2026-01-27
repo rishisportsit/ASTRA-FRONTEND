@@ -10,6 +10,7 @@ import {
   Timer,
 } from "lucide-react";
 import { Task, Priority } from "../utils/kanban-service";
+import { DatePicker } from "./ui/DatePicker";
 
 interface TaskDialogProps {
   isOpen: boolean;
@@ -168,11 +169,10 @@ export const TaskDialog = ({
                     <button
                       key={p}
                       onClick={() => setPriority(p)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        priority === p
-                          ? "bg-white/10 border-white/20 text-white"
-                          : "bg-transparent border-transparent text-white/30 hover:bg-white/5"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${priority === p
+                        ? "bg-white/10 border-white/20 text-white"
+                        : "bg-transparent border-transparent text-white/30 hover:bg-white/5"
+                        }`}
                     >
                       {p}
                     </button>
@@ -185,11 +185,10 @@ export const TaskDialog = ({
                 <label className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
                   <Calendar size={12} /> Deadline
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm text-white/80 focus:outline-none focus:border-white/20 w-full"
+                  onChange={setDeadline}
+                  placeholder="Select deadline"
                 />
               </div>
             </div>

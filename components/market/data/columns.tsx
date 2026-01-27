@@ -164,7 +164,7 @@ export const tradeColumns: Column<Trade>[] = [
     ),
   },
   {
-    key: "id", // Status column
+    key: "last_event", // Status column - using unique key
     header: "Status",
     render: (trade) => (
       <span className="px-2 py-1 rounded-md bg-white/5 text-[10px] uppercase text-white/50 border border-white/5">

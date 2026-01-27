@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Flag, AlignLeft } from "lucide-react";
 import { Goal, GoalPriority, addGoal, updateGoal } from "@/utils/goals-service";
 import { useUser } from "@/context/UserContext";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 interface GoalDialogProps {
     isOpen: boolean;
@@ -38,7 +39,7 @@ export const GoalDialog = ({ isOpen, onClose, goal }: GoalDialogProps) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !title) return;
+        if (!user || !title || !deadline) return;
 
         setLoading(true);
         try {
@@ -113,12 +114,10 @@ export const GoalDialog = ({ isOpen, onClose, goal }: GoalDialogProps) => {
                                     <label className="text-xs text-white/50 font-medium ml-1 flex items-center gap-1">
                                         <Calendar size={12} /> Deadline
                                     </label>
-                                    <input
-                                        type="date"
+                                    <DatePicker
                                         value={deadline}
-                                        onChange={(e) => setDeadline(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
-                                        required
+                                        onChange={setDeadline}
+                                        placeholder="Select deadline"
                                     />
                                 </div>
 
