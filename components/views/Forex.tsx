@@ -21,8 +21,6 @@ export const ForexView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { currencySymbol, exchangeRate, formatCurrency } = useCurrency();
 
-  const activeAccount = userBalances.find((u) => u.id === activeAccountId);
-
   useEffect(() => {
     const unsubscribeBalances = subscribeToUserBalances((data) => {
       setUserBalances(data);
@@ -51,6 +49,8 @@ export const ForexView = () => {
     user.user_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const activeAccount = userBalances.find((u) => u.id === activeAccountId);
 
   const wins = deals.filter(d => d.profit_usd > 0).length;
   const losses = deals.filter(d => d.profit_usd <= 0).length;
