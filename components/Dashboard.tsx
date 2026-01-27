@@ -16,14 +16,21 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onLock }: DashboardProps) {
-  const [activeTabId, setActiveTabId] = useState(tabsConfig[0].id);
+  const [activeTabId, setActiveTabId] = useState(() => {
+    // Try to load from local storage
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("astra-active-tab");
+      if (saved && tabsConfig.find((t) => t.id === saved)) {
+        return saved;
+      }
+    }
+    return tabsConfig[0].id;
+  });
+
   const [background, setBackground] = useState("#000000"); // Default black background
   // ... existing state ...
 
   const { user: appUser, loading } = useUser(); // Get user from our context
-  // NOTE: appUser is our UserProfile, but we also have local `user` state from Firebase direct auth listener below.
-  // We can remove the local listener and rely on Context, OR just use Context for the role.
-  // Let's rely on Context for everything eventually, but for minimal diff, just use appUser for role checking.
 
   const visibleTabs = tabsConfig.filter((tab) => {
     if (!tab.allowedRoles) return true;
@@ -33,14 +40,20 @@ export default function Dashboard({ onLock }: DashboardProps) {
 
   // Ensure active tab is visible
   useEffect(() => {
+    if (loading) return;
     const isVisible = visibleTabs.find((t) => t.id === activeTabId);
     if (!isVisible && visibleTabs.length > 0) {
       setActiveTabId(visibleTabs[0].id);
     }
-  }, [appUser, activeTabId, visibleTabs]);
+  }, [appUser, activeTabId, visibleTabs, loading]);
+
+  const handleTabChange = (id: string) => {
+    setActiveTabId(id);
+    localStorage.setItem("astra-active-tab", id);
+  };
 
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(3000); 
+  const [timeLeft, setTimeLeft] = useState(3000);
   const [isActiveMode, setIsActiveMode] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -76,7 +89,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
         });
       }, 1000);
     } else if (isActiveMode) {
-      setTimeLeft(3000); 
+      setTimeLeft(3000);
     }
 
     return () => clearInterval(interval);
@@ -176,7 +189,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTabId(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300 flex items-center gap-2 ${isActive ? "bg-white/15 text-white shadow-sm ring-1 ring-white/5" : "text-white/50 hover:text-white hover:bg-white/5"}`}
                 >
                   <Icon size={14} />
@@ -227,7 +240,7 @@ export default function Dashboard({ onLock }: DashboardProps) {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTabId(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className="flex-1 relative py-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-300"
                 >
                   {isActive && (

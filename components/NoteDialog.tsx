@@ -116,7 +116,7 @@ export const NoteDialog = ({
                 onClick={handleSave}
                 className="px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors"
               >
-                Save
+                {initialNote ? "Update" : "Save"}
               </button>
             )}
             <button

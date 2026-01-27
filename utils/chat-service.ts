@@ -4,6 +4,7 @@ import {
   addDoc,
   query,
   orderBy,
+  where,
   onSnapshot,
   serverTimestamp,
   Timestamp,
@@ -15,17 +16,19 @@ export interface ChatMessage {
   id?: string;
   text: string;
   sender: string;
+  userId: string;
   createdAt: Timestamp | null;
   type?: "text" | "system";
 }
 
 const COLLECTION_NAME = "messages";
 
-export const sendMessage = async (text: string, sender: string) => {
+export const sendMessage = async (text: string, sender: string, userId: string) => {
   try {
     await addDoc(collection(db, COLLECTION_NAME), {
       text,
       sender,
+      userId,
       createdAt: serverTimestamp(),
       type: "text",
     });
@@ -36,10 +39,14 @@ export const sendMessage = async (text: string, sender: string) => {
 };
 
 export const subscribeToMessages = (
+  userId: string,
   callback: (messages: ChatMessage[]) => void,
 ) => {
+  if (!userId) return () => { };
+
   const q = query(
     collection(db, COLLECTION_NAME),
+    where("userId", "==", userId),
     orderBy("createdAt", "asc"), // Oldest first
   );
 

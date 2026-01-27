@@ -8,6 +8,7 @@ import {
   getDocs,
   query,
   orderBy,
+  where,
   Timestamp,
 } from "firebase/firestore";
 
@@ -15,6 +16,7 @@ export interface Note {
   id: string;
   title: string;
   content: string;
+  userId: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -22,9 +24,12 @@ export interface Note {
 const NOTES_COLLECTION = "astra_notes";
 
 export const notesService = {
-  async fetchNotes(): Promise<Note[]> {
+  async fetchNotes(userId: string): Promise<Note[]> {
+    if (!userId) return [];
+
     const q = query(
       collection(db, NOTES_COLLECTION),
+      where("userId", "==", userId),
       orderBy("updatedAt", "desc"),
     );
     const snapshot = await getDocs(q);

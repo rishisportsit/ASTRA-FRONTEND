@@ -34,9 +34,10 @@ export interface Task {
   description?: string;
   priority?: Priority;
   deadline?: any;
-  estimatedTime?: number; // in hours or minutes, let's say string for flexibility or number for calculation? Plan said number.
+  estimatedTime?: number;
   timeSpent?: number;
   column: ColumnType;
+  userId: string;
   createdAt: any;
 }
 
@@ -44,17 +45,20 @@ export interface Board {
   id: string;
   name: string;
   columns?: ColumnType[];
+  userId: string;
   createdAt: any;
 }
 
 export const createBoard = async (
   name: string,
+  userId: string,
   columns: ColumnType[] = ["Dock", "In Progress", "Finished", "Parked"],
 ) => {
   try {
     const docRef = await addDoc(collection(db, "astra-boards"), {
       name,
       columns,
+      userId,
       createdAt: serverTimestamp(),
     });
     return docRef.id;
@@ -65,10 +69,17 @@ export const createBoard = async (
 };
 
 export const subscribeToBoards = (
+  userId: string,
   callback: (boards: Board[]) => void,
   onError?: (error: any) => void,
 ) => {
-  const q = query(collection(db, "astra-boards"), orderBy("createdAt", "desc"));
+  if (!userId) return () => { };
+
+  const q = query(
+    collection(db, "astra-boards"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
   return onSnapshot(
     q,
     (snapshot) => {
@@ -131,11 +142,13 @@ export const addTask = async (
   boardId: string,
   content: string,
   column: ColumnType,
+  userId: string,
 ) => {
   await addDoc(collection(db, "astra-tasks"), {
     boardId,
     content,
     column,
+    userId,
     priority: "Medium",
     createdAt: serverTimestamp(),
   });
@@ -156,6 +169,7 @@ export const createTask = async (
   boardId: string,
   taskData: Partial<Task>,
   column: ColumnType,
+  userId: string,
 ) => {
   // Clean up undefined values from taskData if necessary, but Firestore handles them or we can just pass.
   // Ensure critical fields
@@ -168,6 +182,7 @@ export const createTask = async (
     estimatedTime: taskData.estimatedTime ?? null,
     timeSpent: taskData.timeSpent ?? 0,
     column,
+    userId,
     createdAt: serverTimestamp(),
   });
 };

@@ -35,8 +35,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         try {
           const userDocRef = doc(db, "Astra-users", firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
 
+          const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             // User exists, load from Firestore
             const existingUser = userDoc.data() as UserProfile;

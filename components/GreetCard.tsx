@@ -72,6 +72,7 @@ export const GreetCard = ({ pageTitle, caption }: GreetCardProps) => {
             src={user.avatarUrl}
             alt={user.username}
             className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
           />
         </div>
       );

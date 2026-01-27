@@ -16,14 +16,14 @@ export const ForexStats = ({ children, activeAccount, wins, losses }: ForexStats
     <div className="flex-none grid grid-cols-1 md:grid-cols-3 gap-4">
       <MarketStatsCard
         title="Total Balance"
-        value={activeAccount ? `$${activeAccount.balance.toLocaleString()}` : "$0.00"}
+        value={activeAccount ? `$${Number(activeAccount.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}
         icon={Wallet}
         trend={{ value: "+0.0%", isPositive: true, label: "today" }}
         gradient="from-emerald-900/40 to-emerald-600/10"
       />
       <MarketStatsCard
         title="Equity"
-        value={activeAccount ? `$${activeAccount.equity.toLocaleString()}` : "$0.00"}
+        value={activeAccount ? `$${Number(activeAccount.equity ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}
         icon={Activity}
         gradient="from-blue-900/40 to-blue-600/10"
         subContent={

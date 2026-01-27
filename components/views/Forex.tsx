@@ -17,8 +17,10 @@ export const ForexView = () => {
   const [userBalances, setUserBalances] = useState<UserBalance[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [activeAccount, setActiveAccount] = useState<UserBalance | undefined>(undefined);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const activeAccount = userBalances.find((u) => u.id === activeAccountId);
 
   useEffect(() => {
     const unsubscribeBalances = subscribeToUserBalances((data) => {
@@ -39,10 +41,10 @@ export const ForexView = () => {
 
   // Set first account as active if none selected
   useEffect(() => {
-    if (userBalances.length > 0 && !activeAccount) {
-      setActiveAccount(userBalances[0]);
+    if (userBalances.length > 0 && !activeAccountId) {
+      setActiveAccountId(userBalances[0].id);
     }
-  }, [userBalances, activeAccount]);
+  }, [userBalances, activeAccountId]);
 
   const filteredBalances = userBalances.filter(user =>
     user.user_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -130,7 +132,7 @@ export const ForexView = () => {
               filteredBalances.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => setActiveAccount(user)}
+                  onClick={() => setActiveAccountId(user.id)}
                   className={`p-3 rounded-2xl border transition-colors flex justify-between items-center group cursor-pointer ${activeAccount?.id === user.id
                     ? "bg-white/10 border-blue-500/50"
                     : "bg-white/5 border-white/5 hover:bg-white/10"

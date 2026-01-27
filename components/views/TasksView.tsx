@@ -125,8 +125,8 @@ const SortableTaskItem = ({
       {...listeners}
       onClick={() => onEdit(task)}
       className={`group relative rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md hover:border-white/10 touch-none flex flex-col justify-between ${isVerticalView
-          ? "p-3 flex-row items-center gap-4 mb-2"
-          : "p-3 mb-3 min-h-[100px]"
+        ? "p-3 flex-row items-center gap-4 mb-2"
+        : "p-3 mb-3 min-h-[100px]"
         }`}
     >
       <div
@@ -224,8 +224,8 @@ const KanbanColumn = ({
       <div
         ref={setNodeRef}
         className={`flex flex-col rounded-2xl border transition-colors duration-200 overflow-hidden w-full ${isActive
-            ? "bg-white/10 border-blue-500/30"
-            : "bg-white/5 border-white/5 backdrop-blur-sm"
+          ? "bg-white/10 border-blue-500/30"
+          : "bg-white/5 border-white/5 backdrop-blur-sm"
           }`}
       >
         {children}
@@ -237,8 +237,8 @@ const KanbanColumn = ({
     <div
       ref={setNodeRef}
       className={`flex-none w-72 md:w-80 flex flex-col rounded-2xl border transition-colors duration-200 overflow-hidden h-full max-h-[600px] ${isActive
-          ? "bg-white/10 border-blue-500/30"
-          : "bg-white/5 border-white/5 backdrop-blur-sm"
+        ? "bg-white/10 border-blue-500/30"
+        : "bg-white/5 border-white/5 backdrop-blur-sm"
         }`}
     >
       {children}
@@ -246,7 +246,12 @@ const KanbanColumn = ({
   );
 };
 
+import { useUser } from "@/context/UserContext";
+
+// ... existing imports
+
 export const TasksView = () => {
+  const { user } = useUser();
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -321,8 +326,15 @@ export const TasksView = () => {
   }, [tasks, boardColumns]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setBoards([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     const unsubscribe = subscribeToBoards(
+      user.id,
       (fetchedBoards) => {
         setBoards(fetchedBoards);
         setIsLoading(false);
@@ -337,7 +349,7 @@ export const TasksView = () => {
       },
     );
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (selectedBoardId) {
@@ -359,14 +371,14 @@ export const TasksView = () => {
   }, [selectedBoardId, activeId]);
 
   const handleCreateBoard = async () => {
-    if (newBoardName.trim()) {
+    if (newBoardName.trim() && user?.id) {
       try {
         setError(null);
         const columnsToSave =
           selectedColumns.length > 0 ? selectedColumns : DEFAULT_SELECTION;
 
         setIsCreatingBoard(false);
-        const boardId = await createBoard(newBoardName.trim(), columnsToSave);
+        const boardId = await createBoard(newBoardName.trim(), user.id, columnsToSave);
 
         setNewBoardName("");
         setSelectedColumns(DEFAULT_SELECTION);
@@ -435,7 +447,9 @@ export const TasksView = () => {
       // I will update TasksView to assume `firebaseAddTask` can take an object or I will create `createTask` in service.
 
       // Let's temporarily call a new function `createTask` which I will add to service.
-      await firebaseCreateTask(selectedBoardId, updates as any, isAddingTask);
+      if (user?.id) {
+        await firebaseCreateTask(selectedBoardId, updates as any, isAddingTask, user.id);
+      }
       setIsAddingTask(null);
     }
   };
@@ -713,14 +727,14 @@ export const TasksView = () => {
                         key={col}
                         onClick={() => toggleColumnSelection(col)}
                         className={`flex items-center gap-3 p-3 rounded-lg border text-sm transition-all ${isSelected
-                            ? "bg-blue-500/10 border-blue-500/50 text-white"
-                            : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
+                          ? "bg-blue-500/10 border-blue-500/50 text-white"
+                          : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
                           }`}
                       >
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected
-                              ? "border-blue-400 bg-blue-400"
-                              : "border-white/30"
+                            ? "border-blue-400 bg-blue-400"
+                            : "border-white/30"
                             }`}
                         >
                           {isSelected && (
@@ -871,16 +885,16 @@ export const TasksView = () => {
                     {/* Status Dot */}
                     <span
                       className={`w-2 h-2 rounded-full ${column === "To Do" ||
-                          column === "Backlog" ||
-                          column === "Dock"
-                          ? "bg-blue-400"
-                          : column === "In Progress"
-                            ? "bg-yellow-400"
-                            : column === "In Review" || column === "Testing"
-                              ? "bg-purple-400"
-                              : column === "Done" || column === "Finished"
-                                ? "bg-green-400"
-                                : "bg-gray-400"
+                        column === "Backlog" ||
+                        column === "Dock"
+                        ? "bg-blue-400"
+                        : column === "In Progress"
+                          ? "bg-yellow-400"
+                          : column === "In Review" || column === "Testing"
+                            ? "bg-purple-400"
+                            : column === "Done" || column === "Finished"
+                              ? "bg-green-400"
+                              : "bg-gray-400"
                         }`}
                     />
                     {column}

@@ -1,15 +1,23 @@
 import { useState, useCallback, useEffect } from "react";
 import { Note, notesService } from "../services/notesService";
+import { useUser } from "@/context/UserContext";
 
 export const useNotes = () => {
+  const { user } = useUser();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadNotes = useCallback(async () => {
+    if (!user?.id) {
+      setNotes([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await notesService.fetchNotes();
+      const data = await notesService.fetchNotes(user.id);
       setNotes(data);
       setError(null);
     } catch (err) {
@@ -18,12 +26,15 @@ export const useNotes = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const createNote = async (note: Pick<Note, "title" | "content">) => {
+    if (!user?.id) return false;
+
     try {
       const newNote = {
         ...note,
+        userId: user.id,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
