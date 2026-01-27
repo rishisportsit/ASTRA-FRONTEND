@@ -88,6 +88,7 @@ interface SectionProps {
   code: string;
   description?: string;
   props?: PropDef[];
+  showHint?: boolean;
 }
 
 const Section = ({
@@ -96,6 +97,7 @@ const Section = ({
   code,
   description,
   props,
+  showHint = false,
 }: SectionProps) => {
   const [isFlipped, setIsFlipped] = React.useState(false);
 
@@ -176,15 +178,17 @@ const Section = ({
 
             {props && <PropsTable props={props} />}
 
-            <div className="mt-8 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 text-sm text-blue-200/60 flex gap-3 items-start">
-              <div className="mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]"></div>
+            {showHint && (
+              <div className="mt-8 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 text-sm text-blue-200/60 flex gap-3 items-start">
+                <div className="mt-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]"></div>
+                </div>
+                <p>
+                  Interact with the card on the left to invoke the 3D flip
+                  animation and inspect the implementation code.
+                </p>
               </div>
-              <p>
-                Interact with the card on the left to invoke the 3D flip
-                animation and inspect the implementation code.
-              </p>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -429,6 +433,7 @@ export default function UiPage() {
           </div>
 
           <Section
+            showHint={true}
             title="GreetCard"
             description="Displays a dynamic personalized greeting. It calculates the time of day (Morning/Afternoon/Evening) and pair it with a context-aware user name and an inspirational quote."
             props={[
