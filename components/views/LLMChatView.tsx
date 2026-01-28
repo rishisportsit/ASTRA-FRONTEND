@@ -17,7 +17,7 @@ import { useNotes } from "@/hooks/useNotes";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { dumps } from "@zenoaihq/tson";
+// import { dumps } from "@zenoaihq/tson";
 
 type Model = "gemini" | "chatgpt";
 
@@ -219,7 +219,7 @@ export const LLMChatView = () => {
                 {selectedModel === "gemini" ? (
                   <>
                     <Sparkles size={14} className="text-blue-400" />
-                    <span>Gemini 1.5 Flash</span>
+                    <span>Gemini 2.5 Flash</span>
                   </>
                 ) : (
                   <>
