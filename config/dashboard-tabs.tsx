@@ -14,8 +14,12 @@ import {
   Lock,
   Target,
   Sparkles,
+  Bot,
+  Bitcoin,
 } from "lucide-react";
 import { IndianView } from "@/components/views/Indian";
+import { CryptoView } from "@/components/views/CryptoView";
+import { BotsView } from "@/components/views/BotsView";
 import { NotesView } from "@/components/views/NotesView";
 import { TasksView } from "@/components/views/TasksView";
 import { RequestAccessView } from "@/components/views/RequestAccessView";
@@ -51,6 +55,14 @@ export const tabsConfig: TabConfig[] = [
     caption: "Market",
     icon: IndianRupee,
     component: <IndianView />,
+    allowedRoles: ["admin"],
+  },
+  {
+    id: "crypto",
+    label: "Crypto",
+    caption: "Market",
+    icon: Bitcoin,
+    component: <CryptoView />,
     allowedRoles: ["admin"],
   },
   {
@@ -98,5 +110,12 @@ export const tabsConfig: TabConfig[] = [
     caption: "Chat with AI",
     icon: Sparkles,
     component: <LLMChatView />,
+  },
+  {
+    id: "bots",
+    label: "Bots",
+    caption: "Manage your bots",
+    icon: Bot,
+    component: <BotsView />,
   },
 ];
